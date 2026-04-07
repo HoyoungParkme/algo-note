@@ -1,0 +1,60 @@
+---
+id: boj-2252
+problemNumber: 2252
+title: 줄 세우기
+url: https://www.acmicpc.net/problem/2252
+topicId: topo
+difficulty: medium
+tags: [위상 정렬, 진입 차수, BFS]
+timeComplexity: O(N + M)
+spaceComplexity: O(N + M)
+---
+
+## 문제 요약
+
+N명의 학생을 키 순서대로 줄 세우려고 한다. 일부 쌍에 대해 "A가 B보다 앞에 서야 한다"는 정보가 주어진다. 가능한 순서 중 하나를 출력한다.
+
+## 접근
+
+**위상 정렬**의 정형. 의존성 그래프(`A → B`는 "A가 B보다 앞")에서 진입 차수가 0인 노드부터 차례로 제거한다.
+
+- 진입 차수 배열 `in_deg`를 만들고, 간선 입력 시 `in_deg[v]` 증가
+- 진입 차수 0인 노드를 모두 큐에 넣음 (선수조건이 없는 학생)
+- 큐에서 꺼내며 결과에 추가, 그 노드에서 나가는 간선의 끝 노드 진입 차수 감소
+- 진입 차수가 0이 되면 큐에 추가
+
+## 풀이 코드
+
+```python
+import sys
+from collections import deque
+input = sys.stdin.readline
+
+N, M = map(int, input().split())
+adj = [[] for _ in range(N + 1)]
+in_deg = [0] * (N + 1)
+
+for _ in range(M):
+    a, b = map(int, input().split())
+    adj[a].append(b)
+    in_deg[b] += 1
+
+q = deque(i for i in range(1, N + 1) if in_deg[i] == 0)
+result = []
+
+while q:
+    u = q.popleft()
+    result.append(u)
+    for v in adj[u]:
+        in_deg[v] -= 1
+        if in_deg[v] == 0:
+            q.append(v)
+
+print(' '.join(map(str, result)))
+```
+
+## 핵심 포인트
+
+- **DAG(순환 없는 방향 그래프) 전제**가 있어야 위상 정렬 가능. 사이클이 있으면 진입 차수가 끝까지 0이 안 되는 노드가 남음
+- 가능한 답이 여러 개일 수 있음 — 큐에 들어간 순서대로 출력하면 OK
+- 같은 패턴 + 시간 가중치: BOJ 1005 ACM Craft (시간 누적 DP를 위상 정렬 위에 얹음)

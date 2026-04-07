@@ -1,0 +1,72 @@
+---
+id: unionfind
+num: '22'
+title: 유니온-파인드 (Union-Find)
+analogy: 학교 반 편성. "너랑 나랑 같은 반이야?" → 반 대표(루트)가 같은지 비교하면 즉시 답
+category: unionfind
+difficulty: hard
+unlearned: true
+keywords: [유니온파인드, Union-Find, DSU, 경로 압축, 사이클 판별]
+quiz:
+  q: |
+    유니온-파인드에서 "경로 압축"이란?
+  options:
+    - '두 집합을 합치는 것'
+    - 'Find 시 부모를 루트로 바로 연결'
+    - '트리를 정렬하는 것'
+  answer: 1
+  explain: |
+    Find할 때 거쳐간 모든 노드의 부모를 루트로 직접 연결 → 다음 Find가 O(1)에 가까워짐
+---
+
+<Why>
+- "A와 B가 같은 그룹인가?" 판별을 **거의 O(1)** 에 처리
+- 그래프에서 사이클 판별, 크루스칼 MST의 핵심 부품
+- "집합 합치기", "네트워크 연결 확인", "친구 관계" 문제에서 활용
+</Why>
+
+<How>
+- **Find**: 노드가 속한 그룹의 대표(루트)를 찾음
+- **Union**: 두 그룹을 하나로 합침
+- **경로 압축**: Find할 때 부모를 루트로 바로 연결 → 속도 향상
+- **랭크 기반 합치기**: 작은 트리를 큰 트리 밑에 → 균형 유지
+</How>
+
+<Template>
+<Prob tags={['집합의 표현', '여행 가자', '네트워크 연결', '크루스칼 MST 내부', '사이클 판별']} />
+
+### 유니온-파인드 템플릿
+
+<SolutionBlock problemId="boj-1717">
+
+```python
+# parent[i] = i의 부모 (초기: 자기 자신)
+parent = list(range(N + 1))  # [0, 1, 2, 3, ...]
+rank = [0] * (N + 1)         # 트리 높이 (합칠 때 균형용)
+
+def find(x):
+    """x가 속한 그룹의 대표(루트)를 찾는다"""
+    if parent[x] != x:
+        parent[x] = find(parent[x])  # 경로 압축: 루트를 바로 연결
+    return parent[x]
+
+def union(a, b):
+    """a와 b를 같은 그룹으로 합친다"""
+    ra, rb = find(a), find(b)   # 각각의 루트
+    if ra == rb: return False    # 이미 같은 그룹 → 합칠 필요 없음
+    # 랭크가 낮은 쪽을 높은 쪽 밑에 붙임
+    if rank[ra] < rank[rb]:
+        ra, rb = rb, ra
+    parent[rb] = ra              # rb를 ra 밑에
+    if rank[ra] == rank[rb]:
+        rank[ra] += 1
+    return True                  # 합치기 성공
+
+# 사용 예시
+if find(a) == find(b):           # 같은 그룹인지 확인
+    print("같은 그룹")
+union(a, b)                      # a, b를 합침
+```
+
+</SolutionBlock>
+</Template>

@@ -1,0 +1,68 @@
+---
+id: array
+num: '02'
+title: 배열 (Array)
+analogy: 아파트 우편함. 101호, 102호... 번호(인덱스)만 알면 바로 접근
+category: array
+difficulty: easy
+keywords: [array, list, 배열, 슬라이싱, 인덱스, enumerate, zip]
+quiz:
+  q: |
+    arr=[[0]*3]*2에서 arr[0][1]=5 하면?
+  options:
+    - 'arr[0]만 변경'
+    - 'arr[0]과 arr[1] 둘 다 변경'
+    - '에러'
+  answer: 1
+  explain: |
+    같은 리스트를 참조하므로 둘 다 [0,5,0]. for문으로 각각 생성해야 안전
+---
+
+<Why>
+- 데이터를 **순서대로 저장**하고 인덱스로 즉시 접근하는 가장 기본 자료구조
+- 코테에서 거의 모든 문제의 출발점 — 입력을 배열로 받고 시작
+- 리스트 슬라이싱, 정렬, 탐색 등 **다른 알고리즘의 기반**
+</Why>
+
+<How>
+| 연산 | 복잡도 |
+|:--|:--|
+| 인덱스 접근 arr[i] | O(1) |
+| 끝에 추가/삭제 | O(1) |
+| 중간 삽입/삭제 | O(N) |
+| 값 검색 (x in arr) | O(N) |
+</How>
+
+<Template>
+<Prob tags={['배열 회전', '구간 합/최대/최소', '2D 격자 탐색', '좌표 압축']} />
+
+```python
+# ─── 배열 초기화 ───
+arr = [0] * N                              # 0으로 N개 초기화
+grid = [[0]*M for _ in range(N)]           # N×M 2D (반드시 for문!)
+# ⚠ [[0]*M]*N → 같은 리스트 N번 참조! (한 행 바꾸면 전부 바뀜)
+
+# ─── 슬라이싱 ───
+arr[1:4]      # 인덱스 1,2,3 추출
+arr[::-1]     # 역순 (뒤집기)
+arr[:]        # 전체 복사 (원본 유지)
+
+# ─── 유용한 내장함수 ───
+max(arr), min(arr), sum(arr)   # 최대/최소/합
+arr.index(x)                    # x의 첫 인덱스 (없으면 에러)
+arr.count(x)                    # x 등장 횟수
+
+# ─── 인덱스와 값을 동시에 ───
+for i, val in enumerate(arr):     # (0, arr[0]), (1, arr[1]), ...
+    print(i, val)
+
+# ─── 두 배열 병렬 순회 ───
+for a, b in zip(arr1, arr2):     # 짝지어서 순회
+    print(a + b)
+
+# ─── 좌표 압축 (값이 크지만 순서만 중요할 때) ───
+sorted_unique = sorted(set(arr))          # 중복 제거 + 정렬
+rank = {v: i for i, v in enumerate(sorted_unique)}  # 값→순위 매핑
+compressed = [rank[x] for x in arr]       # 원본 배열을 순위로 변환
+```
+</Template>

@@ -1,0 +1,64 @@
+---
+id: boj-2805
+problemNumber: 2805
+title: 나무 자르기
+url: https://www.acmicpc.net/problem/2805
+topicId: binary
+difficulty: medium
+tags: [이분 탐색, 파라메트릭 서치]
+timeComplexity: O(N log H)
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+N그루의 나무가 있다. 절단기 높이 H를 정하면 H보다 높은 부분은 모두 잘라 가져갈 수 있다. M미터 이상의 나무를 가져가기 위한 절단기 높이의 **최댓값**을 구한다.
+
+## 접근
+
+**파라메트릭 서치**의 정형. "H가 작을수록 많이 가져간다"는 단조성이 있으므로, 가능한 H 중 최댓값을 이분 탐색한다.
+
+- 탐색 범위: `lo = 0`, `hi = max(trees)`
+- `check(H)`: 절단기 H로 잘랐을 때 얻는 나무가 M 이상인지
+- `check(mid)`가 참이면 → mid도 답 후보, 더 높은 값 시도 (`lo = mid + 1`)
+- 거짓이면 → 너무 높음, 낮춰야 함 (`hi = mid - 1`)
+- 답은 `hi` (마지막으로 참이었던 값)
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+
+N, M = map(int, input().split())
+trees = list(map(int, input().split()))
+
+def check(h: int) -> bool:
+    # h로 잘랐을 때 얻는 나무 길이의 합이 M 이상인가
+    total = 0
+    for t in trees:
+        if t > h:
+            total += t - h
+    return total >= M
+
+lo, hi = 0, max(trees)
+ans = 0
+while lo <= hi:
+    mid = (lo + hi) // 2
+    if check(mid):
+        ans = mid          # mid도 가능 → 더 높이 시도
+        lo = mid + 1
+    else:
+        hi = mid - 1       # 너무 높음 → 낮추기
+
+print(ans)
+```
+
+## 핵심 포인트
+
+- **답을 추적하는 방법 두 가지**:
+  1. `ans` 변수에 마지막 성공값 저장 (위 코드 방식, 직관적)
+  2. `lo < hi`로 루프 돌리고 `lo` 반환 (고급 패턴)
+- `t - h`를 더할 때 `t > h`인 경우만. 음수 더하면 안 됨
+- `sum(max(0, t - h) for t in trees)`로도 같음 (느림)
+- N ≤ 1,000,000, max H ≤ 10⁹ → O(N log H) ≈ 3 · 10⁷ 안전

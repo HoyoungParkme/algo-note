@@ -1,0 +1,52 @@
+---
+id: boj-1715
+problemNumber: 1715
+title: 카드 정렬하기
+url: https://www.acmicpc.net/problem/1715
+topicId: pq
+difficulty: medium
+tags: [우선순위 큐, 힙, 그리디, 허프만]
+timeComplexity: O(N log N)
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+N개의 카드 묶음이 있다. 두 묶음을 합칠 때 비용은 두 묶음 카드 수의 합이다. 모든 묶음을 하나로 합치는 데 드는 **최소 비용**을 구한다.
+
+## 접근
+
+매번 **가장 작은 두 묶음을 합치는 게 최적**이다 (허프만 알고리즘과 같은 원리). 큰 묶음을 일찍 합치면 그 비용이 누적되어 더해지므로 손해.
+
+- 최소 힙(`heapq`)에 모든 묶음을 넣고
+- 두 개를 꺼내 합치고 → 합친 결과를 다시 힙에 넣음
+- 힙에 묶음이 1개 남을 때까지 반복하면서 비용 누적
+
+## 풀이 코드
+
+```python
+import sys
+import heapq
+input = sys.stdin.readline
+
+N = int(input())
+pq = [int(input()) for _ in range(N)]
+heapq.heapify(pq)              # O(N)에 힙 구조로
+
+total = 0
+while len(pq) > 1:
+    a = heapq.heappop(pq)      # 가장 작은
+    b = heapq.heappop(pq)      # 두 번째 작은
+    cost = a + b
+    total += cost
+    heapq.heappush(pq, cost)   # 합친 결과를 다시 힙으로
+
+print(total)
+```
+
+## 핵심 포인트
+
+- **N=1 예외**: 묶음이 1개면 합칠 게 없으므로 비용 0
+- `heapify`는 O(N), 매 push/pop은 O(log N) → 전체 O(N log N)
+- 같은 패턴: 발전소 합치기, 통신 비용 등
+- 일반 그리디로 "큰 것부터" 시도하면 반례 발생 — 항상 작은 것부터가 정답

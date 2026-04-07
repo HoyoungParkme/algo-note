@@ -1,0 +1,81 @@
+---
+id: topo
+num: '20'
+title: 위상 정렬
+analogy: 수강신청. "자료구조"→"알고리즘". 선수과목 지키며 순서 정하기
+category: topo
+difficulty: hard
+keywords: [위상정렬, topological sort, DAG, 진입 차수, 의존성]
+quiz:
+  q: |
+    위상 정렬 가능한 그래프 조건?
+  options:
+    - '무방향'
+    - '순환 있는 방향'
+    - '순환 없는 방향 (DAG)'
+  answer: 2
+  explain: |
+    순환 있으면 "A먼저→B, B먼저→A" 모순
+---
+
+<Why>
+- 선후 관계(의존성)가 있는 작업의 **실행 순서** 결정
+- 빌드 시스템, 커리큘럼, 작업 스케줄링
+- "순서 정해라" + "선수 조건" = 위상 정렬
+</Why>
+
+<How>
+- **DAG**(순환 없는 방향 그래프)에서만 가능
+- 진입 차수 0인 노드부터 큐 → 빼면서 연결 노드 차수 감소
+</How>
+
+<Template>
+<Prob tags={['줄 세우기', '게임 개발 (작업 순서)', '선수과목', 'ACM Craft', '음식물 쓰레기']} />
+
+### 기본 위상 정렬 (BOJ 2252)
+
+<SolutionBlock problemId="boj-2252">
+
+```python
+from collections import deque
+
+# 진입 차수 계산
+in_deg = [0]*(N+1)
+for u in range(1, N+1):
+    for v in adj[u]:
+        in_deg[v] += 1               # v를 가리키는 간선 수
+
+# 진입 차수 0인 노드 = 선수과목 없는 과목
+q = deque(i for i in range(1, N+1) if in_deg[i]==0)
+result = []
+
+while q:
+    u = q.popleft()
+    result.append(u)                 # 순서에 추가
+    for v in adj[u]:
+        in_deg[v] -= 1               # 수강 완료 → 차수 감소
+        if in_deg[v] == 0:           # 선수과목 다 들었으면
+            q.append(v)              # 수강 가능 → 큐에 추가
+```
+
+</SolutionBlock>
+
+### 위상 정렬 + 최소 시간 (BOJ 1005 ACM Craft)
+
+```python
+# 각 작업의 최소 시작 시간 (의존성 고려)
+time = [0]*(N+1)
+for i in range(1, N+1):
+    if in_deg[i]==0:
+        time[i] = cost[i]            # 선수과목 없으면 바로 시작
+        q.append(i)
+
+while q:
+    u = q.popleft()
+    for v in adj[u]:
+        # v의 시작 시간 = 선수과목 중 가장 늦게 끝나는 것 + v 소요시간
+        time[v] = max(time[v], time[u] + cost[v])
+        in_deg[v] -= 1
+        if in_deg[v]==0: q.append(v)
+```
+</Template>

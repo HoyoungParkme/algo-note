@@ -1,0 +1,76 @@
+---
+id: string
+num: '03'
+title: 문자열 (String)
+analogy: 글자 구슬을 실에 꿰어 만든 목걸이. 하나씩 떼어볼 수도, 통째로 비교할 수도 있음
+category: string
+difficulty: easy
+keywords: [문자열, string, 회문, 아나그램, immutable, Counter]
+quiz:
+  q: |
+    s="abc"에서 s[0]="x" 하면?
+  options:
+    - 's가 "xbc"로 변경'
+    - '에러 (immutable)'
+    - '새 문자열 생성'
+  answer: 1
+  explain: |
+    Python 문자열은 불변. list(s)로 변환 후 수정 → join으로 복원
+---
+
+<Why>
+- 코테 입력의 상당수가 문자열 — **파싱, 변환, 비교**가 기본기
+- Python 문자열은 **불변(immutable)** → 수정하면 새 문자열 생성 = O(N)
+- "문자열 뒤집기", "회문 판별", "부분 문자열", "아나그램" 등 단독 출제 많음
+</Why>
+
+<How>
+- 인덱스 접근 O(1), 슬라이싱 O(K), 비교는 사전순
+- `s[0]='a'` 불가 → **리스트로 변환 후 수정**
+- 문자열 반복 결합 `s+='a'`를 N번 → O(N²) 주의!
+</How>
+
+<Template>
+<Prob tags={['회문(팰린드롬) 판별', '아나그램', '부분 문자열 검색', '문자열 압축', '문자열 정렬']} />
+
+<SolutionBlock problemId="boj-1316">
+
+```python
+# ─── 기본 조작 ───
+s.upper()  s.lower()  s.strip()       # 대/소문자, 공백 제거
+s.split()                              # 공백 기준 분리 → 리스트
+s.split(',')                           # 쉼표 기준 분리
+'-'.join(['a','b'])                    # "a-b" (리스트→문자열)
+s.replace('old', 'new')                # 치환
+s.find('abc')                          # 위치 반환 (없으면 -1)
+s.count('a')                           # 등장 횟수
+s.isdigit()  s.isalpha()              # 숫자만? 알파벳만?
+
+# ─── 수정이 필요할 때 → 리스트 변환 ───
+lst = list(s)          # ['h','e','l','l','o']
+lst[0] = 'H'           # 리스트는 수정 가능
+result = ''.join(lst)  # 다시 문자열로
+
+# ─── 회문 판별 ───
+def is_palindrome(s):
+    return s == s[::-1]   # 뒤집어서 같으면 회문
+
+# ─── 아나그램 판별 (같은 글자 구성인지) ───
+from collections import Counter
+def is_anagram(a, b):
+    return Counter(a) == Counter(b)  # 글자 빈도가 같으면 아나그램
+
+# ─── 아스키 코드 변환 ───
+ord('a')              # 97
+chr(97)              # 'a'
+ord(c) - ord('a')    # 알파벳 → 0~25 숫자 변환 (빈도 배열에 유용)
+
+# ─── 성능 좋은 문자열 결합 ───
+parts = []                 # s += 'a' 반복은 O(N²)!
+for c in data:
+    parts.append(c)
+result = ''.join(parts)   # 마지막에 한 번에 합치기 O(N)
+```
+
+</SolutionBlock>
+</Template>

@@ -1,0 +1,51 @@
+---
+id: boj-11659
+problemNumber: 11659
+title: 구간 합 구하기 4
+url: https://www.acmicpc.net/problem/11659
+topicId: psum
+difficulty: easy
+tags: [누적합, 구간 합]
+timeComplexity: O(N + M)
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+길이 N의 수열이 주어지고, M개의 구간 (i, j)에 대해 i번째부터 j번째까지의 합을 출력한다.
+
+## 접근
+
+매 쿼리마다 합을 구하면 O(N · M)으로 시간 초과. **누적합 배열을 미리 만들어두고 O(1)에 응답**한다.
+
+- `psum[i]` = `arr[0] + arr[1] + ... + arr[i-1]` (1-indexed로 0번 패딩)
+- 구간 합 `arr[i..j]` = `psum[j] - psum[i-1]`
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+
+N, M = map(int, input().split())
+arr = list(map(int, input().split()))
+
+# 누적합 (0번 패딩으로 1-indexed처럼 사용)
+psum = [0] * (N + 1)
+for i in range(N):
+    psum[i + 1] = psum[i] + arr[i]
+
+out = []
+for _ in range(M):
+    i, j = map(int, input().split())
+    out.append(str(psum[j] - psum[i - 1]))
+
+sys.stdout.write('\n'.join(out) + '\n')
+```
+
+## 핵심 포인트
+
+- **0번 패딩이 핵심**: `psum[0] = 0`을 두면 i=1일 때도 `psum[i-1] = psum[0] = 0`으로 깔끔히 처리됨
+- 패딩 없이 짜면 i=1 케이스를 별도 처리해야 함 → 버그의 온상
+- 출력은 모아서 한 번에 (`sys.stdout.write`) → M=100,000일 때 print 반복은 시간 초과 가능
+- 2D로 확장: `psum[i][j] = arr[0..i-1][0..j-1]` 직사각형 합. 포함-배제로 사각형 합 구함

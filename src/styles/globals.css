@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────
+   디자인 토큰
+   - 다크 모드(기본): zinc 계열 + violet/pink 액센트
+   - 라이트 모드: 기존 베이지 톤 보존
+   ──────────────────────────────────────────────────────── */
+:root {
+  --bg: #f5f3ee;
+  --surface: #edeae4;
+  --card: #ffffff;
+  --card-hover: #faf8f5;
+  --border: #ddd8cf;
+  --text: #2c2825;
+  --text-dim: #5c5650;
+  --text-muted: #9a938a;
+  --accent: #4f46e5;
+  --accent2: #d94878;
+  --accent3: #0d9373;
+  --code-bg: #faf8f5;
+  --code-border: #e5e0d8;
+}
+
+:root.dark {
+  --bg: #09090b;
+  --surface: #111114;
+  --card: #18181b;
+  --card-hover: #1f1f23;
+  --border: #27272a;
+  --text: #fafafa;
+  --text-dim: #a1a1aa;
+  --text-muted: #71717a;
+  --accent: #a78bfa;
+  --accent2: #f472b6;
+  --accent3: #34d399;
+  --code-bg: #0f0f12;
+  --code-border: #27272a;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans antialiased;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+}
+
+@layer components {
+  /* MDX 본문 공통 타이포 */
+  .prose-mdx h3 {
+    @apply text-base font-bold mt-5 mb-2.5 pb-1.5;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .prose-mdx h3:first-child {
+    @apply mt-0;
+  }
+  .prose-mdx p {
+    color: var(--text-dim);
+    @apply text-[0.92rem] mb-2.5;
+  }
+  .prose-mdx ul {
+    @apply list-none mb-3.5;
+  }
+  .prose-mdx li {
+    color: var(--text-dim);
+    @apply text-[0.92rem] mb-1.5 pl-[18px] relative;
+  }
+  .prose-mdx li::before {
+    content: '›';
+    color: var(--accent);
+    @apply absolute left-0 font-bold;
+  }
+  .prose-mdx pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    @apply rounded-xl px-4 py-4 overflow-x-auto my-3 text-[0.82rem] leading-relaxed;
+  }
+  .prose-mdx code {
+    @apply font-mono;
+  }
+  .prose-mdx pre code {
+    color: var(--text);
+  }
+  .prose-mdx p code,
+  .prose-mdx li code {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    color: var(--accent);
+    @apply px-1.5 py-0.5 rounded text-[0.82rem];
+  }
+  .prose-mdx table {
+    @apply w-full border-collapse my-3 text-[0.88rem];
+  }
+  .prose-mdx th {
+    background: var(--code-bg);
+    color: var(--text-dim);
+    border-bottom: 2px solid var(--border);
+    @apply text-left px-3.5 py-2.5 font-medium;
+  }
+  .prose-mdx td {
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    @apply px-3.5 py-2.5;
+  }
+  .prose-mdx tr:hover td {
+    background: var(--card-hover);
+  }
+
+  /* SubTabs: 활성 탭의 섹션만 표시 */
+  .sub-tabs-content > [data-section] {
+    display: none;
+  }
+  .sub-tabs-content[data-active-tab='why'] > [data-section='why'],
+  .sub-tabs-content[data-active-tab='how'] > [data-section='how'],
+  .sub-tabs-content[data-active-tab='tpl'] > [data-section='tpl'] {
+    display: block;
+  }
+}
+
+/* shiki: defaultColor:false 모드에서 라이트/다크 토큰을 CSS 변수로 분기 */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+:root.dark .shiki,
+:root.dark .shiki span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+
+/* shiki <pre>는 CodeBlock wrapper의 <pre>에 의해 스타일을 받으므로 배경 무효화 */
+.shiki {
+  background-color: transparent !important;
+}

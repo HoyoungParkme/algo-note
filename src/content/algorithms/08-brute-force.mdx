@@ -1,0 +1,67 @@
+---
+id: brute
+num: '08'
+title: 완전 탐색 (Brute Force)
+analogy: 자물쇠 비밀번호 0000~9999 전부 시도
+category: brute
+difficulty: medium
+keywords: [완전탐색, 브루트포스, 조합, 순열, 비트마스크]
+quiz:
+  q: |
+    [1,2,3]에서 2개 뽑는 조합/순열 수?
+  options:
+    - '조합 3 순열 6'
+    - '조합 6 순열 3'
+    - '둘 다 3'
+  answer: 0
+  explain: |
+    C(3,2)=3, P(3,2)=6
+---
+
+<Why>
+- N이 작으면(≤20) **전부 보는 게 가장 확실**
+- 최적해를 놓칠 걱정 없음
+- DP/그리디가 안 떠오를 때 일단 완전탐색으로 정답 확인 후 최적화
+</Why>
+
+<How>
+| 도구 | 의미 | 경우의 수 |
+|:--|:--|:--|
+| 조합 | 순서 무관 | C(N,R) |
+| 순열 | 순서 중요 | P(N,R) |
+| 부분집합 | 뽑거나 안 뽑거나 | 2^N |
+</How>
+
+<Template>
+<Prob tags={['N과 M 시리즈', '로또 (조합)', '차이를 최대로 (순열)', '부분수열의 합', '연산자 끼워넣기']} />
+
+<SolutionBlock problemId="boj-6603">
+
+```python
+from itertools import combinations, permutations
+
+# ─── 조합: N개에서 R개 뽑기 (순서 무관) ───
+# BOJ 6603 로또, 15686 치킨 배달
+for combo in combinations(arr, r):
+    if check(combo):                  # 각 조합마다 조건 체크
+        answer = max(answer, calc(combo))
+
+# ─── 순열: N개에서 R개 뽑기 (순서 중요) ───
+# BOJ 10819 차이를 최대로
+for perm in permutations(arr):
+    score = sum(abs(perm[i]-perm[i+1]) for i in range(len(perm)-1))
+    answer = max(answer, score)
+
+# ─── 부분집합: 비트마스크 ───
+# BOJ 1182 부분수열의 합
+for mask in range(1, 1 << N):        # 1부터 (공집합 제외)
+    subset_sum = 0
+    for i in range(N):
+        if mask & (1 << i):           # i번째 비트가 켜져있으면
+            subset_sum += arr[i]      # 해당 원소 포함
+    if subset_sum == S:
+        count += 1
+```
+
+</SolutionBlock>
+</Template>

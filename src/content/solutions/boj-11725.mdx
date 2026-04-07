@@ -1,0 +1,59 @@
+---
+id: boj-11725
+problemNumber: 11725
+title: 트리의 부모 찾기
+url: https://www.acmicpc.net/problem/11725
+topicId: tree
+difficulty: easy
+tags: [트리, BFS, DFS]
+timeComplexity: O(N)
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+루트 없는 트리(N개 노드, N-1개 간선)가 주어진다. 루트를 1번 노드로 정했을 때, 2번~N번 노드의 부모를 출력한다.
+
+## 접근
+
+트리는 양방향 인접 리스트로 입력받고, **루트(1번)에서 BFS/DFS로 탐색**하면 자연스럽게 부모-자식 방향이 정해진다.
+
+- 인접 리스트 `adj`에 양방향으로 추가
+- 1번에서 시작해 BFS, 방문하지 않은 이웃을 큐에 넣을 때 `parent[이웃] = 현재` 기록
+
+## 풀이 코드
+
+```python
+import sys
+from collections import deque
+input = sys.stdin.readline
+
+N = int(input())
+adj = [[] for _ in range(N + 1)]
+for _ in range(N - 1):
+    a, b = map(int, input().split())
+    adj[a].append(b)
+    adj[b].append(a)
+
+parent = [0] * (N + 1)
+visit = [False] * (N + 1)
+q = deque([1])
+visit[1] = True
+
+while q:
+    u = q.popleft()
+    for v in adj[u]:
+        if not visit[v]:
+            visit[v] = True
+            parent[v] = u
+            q.append(v)
+
+print('\n'.join(str(parent[i]) for i in range(2, N + 1)))
+```
+
+## 핵심 포인트
+
+- **트리는 사이클이 없으므로** visit 체크 = 부모로 돌아가지 않게 막는 효과
+- **DFS 재귀**로도 풀 수 있지만 N이 크면 (10⁵) `setrecursionlimit` 필요. BFS가 더 안전
+- 1번 노드의 부모는 0(또는 -1) — 출력에서 2번부터 시작
+- 트리의 지름, LCA 등 후속 트리 문제도 같은 입력 패턴

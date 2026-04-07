@@ -1,0 +1,91 @@
+---
+id: bfs
+num: '16'
+title: BFS (너비 우선 탐색)
+analogy: 국·영·수 매일 조금씩 골고루. 가까운 곳부터 넓게
+category: bfs
+difficulty: medium
+keywords: [BFS, 너비우선, 최단거리, 큐, 격자, 다중 시작점]
+quiz:
+  q: |
+    BFS 최단 거리 보장 조건?
+  options:
+    - '가중치 모두 동일'
+    - '항상'
+    - '가중치 음수'
+  answer: 0
+  explain: |
+    가중치 다르면 다익스트라. BFS는 가중치 없는 그래프에서 보장
+---
+
+<Why>
+- 가중치 없는 그래프에서 **최단 거리 보장**
+- "최소 이동 횟수", "최단 경로" → 가장 먼저 떠올려야
+- 2D 격자(미로) BFS → 코테 단골
+</Why>
+
+<How>
+큐(deque) 사용. 이웃을 큐에 넣고 하나씩 꺼내며 탐색. 방문 체크 필수.
+</How>
+
+<Template>
+<Prob tags={['미로 최단 거리', '토마토 익히기', '숨바꼭질', '벽 부수고 이동', '연결 요소 개수', '단지 번호 붙이기']} />
+
+### 그래프 BFS — 인접 리스트 패턴
+
+```python
+from collections import deque
+def bfs(start):
+    visit = [False]*(N+1)
+    dist = [-1]*(N+1)               # -1 = 미방문
+    q = deque([start])
+    visit[start] = True; dist[start] = 0
+
+    while q:
+        u = q.popleft()              # FIFO: 가까운 노드부터
+        for v in adj[u]:
+            if not visit[v]:
+                visit[v] = True
+                dist[v] = dist[u]+1  # 이전 거리 + 1
+                q.append(v)
+    return dist
+```
+
+### 2D 격자 BFS — 미로 탐색 (BOJ 2178)
+
+<SolutionBlock problemId="boj-2178">
+
+```python
+dx = [-1,1,0,0]  # 상하좌우 이동
+dy = [0,0,-1,1]
+
+def bfs_grid(sx, sy):
+    dist = [[-1]*M for _ in range(N)]  # -1: 미방문
+    dist[sx][sy] = 1                    # 시작점 거리 1 (문제 조건)
+    q = deque([(sx, sy)])
+
+    while q:
+        x, y = q.popleft()
+        for d in range(4):                # 4방향 탐색
+            nx, ny = x+dx[d], y+dy[d]
+            # 범위 체크 + 벽 아닌지 + 미방문인지
+            if 0<=nx<N and 0<=ny<M and grid[nx][ny]==1 and dist[nx][ny]==-1:
+                dist[nx][ny] = dist[x][y]+1
+                q.append((nx, ny))
+    return dist
+```
+
+</SolutionBlock>
+
+### 토마토 (BOJ 7576) — 다중 시작점 BFS
+
+```python
+# 익은 토마토 위치를 전부 큐에 넣고 시작
+q = deque()
+for i in range(N):
+    for j in range(M):
+        if grid[i][j] == 1:           # 익은 토마토
+            q.append((i, j))          # 시작점 여러 개!
+# 이후 일반 BFS와 동일
+```
+</Template>

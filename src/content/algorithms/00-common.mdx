@@ -1,0 +1,214 @@
+---
+id: common
+num: '00'
+title: 공통 패턴 (코테 필수 세팅)
+analogy: 요리 시작 전에 도마·칼·불 세팅하는 것. 어떤 알고리즘이든 이 세팅부터 깔고 시작
+category: common
+difficulty: easy
+keywords: [입력, sys.stdin, deque, BFS, DFS, 템플릿, 세팅]
+quiz:
+  q: |
+    sys.stdin.readline()을 쓰는 이유는?
+  options:
+    - '코드가 짧아서'
+    - 'input()보다 5~10배 빠름'
+    - '기능이 더 많아서'
+  answer: 1
+  explain: |
+    input()은 내부에서 불필요한 처리를 해서 느림. 대량 입력 시 시간초과 원인이 됨
+---
+
+<Why>
+- 코테 문제의 **90%가 같은 입력 패턴**을 공유함 — 외워두면 시간 절약
+- adj, visit, dist, psum 같은 배열은 알고리즘마다 반복 등장
+- 입력 속도, 재귀 제한 등 **안 하면 시간초과/런타임에러**나는 세팅이 있음
+</Why>
+
+<How>
+### 입력 속도 최적화
+
+```python
+import sys
+input = sys.stdin.readline   # input()보다 5~10배 빠름
+# 주의: 끝에 \n이 포함됨 → 문자열이면 .strip() 필요
+```
+
+### 재귀 제한 해제 (DFS 등)
+
+```python
+import sys
+sys.setrecursionlimit(10**6)  # 기본 1000 → 100만으로
+```
+
+### 자주 쓰는 import
+
+```python
+from collections import deque, Counter, defaultdict
+from itertools import combinations, permutations
+import heapq
+import math
+```
+</How>
+
+<Template>
+### 입력 받기 패턴 모음
+
+```python
+# ─── 숫자 1개 ───
+N = int(input())
+
+# ─── 숫자 여러 개 (한 줄에 공백 구분) ───
+N, M = map(int, input().split())        # 변수 2개
+a, b, c = map(int, input().split())     # 변수 3개
+arr = list(map(int, input().split()))   # 배열로 받기
+
+# ─── N줄에 걸쳐 한 줄씩 ───
+arr = [int(input()) for _ in range(N)]
+
+# ─── 2D 격자 (N×M) ───
+grid = [list(map(int, input().split())) for _ in range(N)]
+
+# ─── 2D 격자 (붙어있는 숫자: "0110") ───
+grid = [list(map(int, input().strip())) for _ in range(N)]
+
+# ─── 문자열 ───
+s = input().strip()  # readline은 \n 포함하므로 strip 필수
+```
+
+### 배열 초기화 패턴 모음
+
+```python
+# ─── 인접 리스트 (그래프/트리 문제) ───
+adj = [[] for _ in range(N + 1)]   # 1-indexed (0번 안 씀)
+
+# ─── 방문 체크 배열 ───
+visit = [False] * (N + 1)
+
+# ─── 거리/비용 배열 ───
+dist = [-1] * (N + 1)           # BFS: -1이면 미방문
+dist = [1e9] * (N + 1)          # 다익스트라: 무한대로 초기화
+
+# ─── 누적합 배열 (앞에 0 패딩) ───
+psum = [0] * (N + 1)
+
+# ─── DP 배열 ───
+dp = [0] * (N + 1)              # 1차원
+dp = [[0] * (M + 1) for _ in range(N + 1)]  # 2차원
+
+# ─── 진입 차수 (위상 정렬) ───
+in_deg = [0] * (N + 1)
+```
+
+### 간선 입력 패턴 모음
+
+```python
+# ─── 양방향 그래프 ───
+for _ in range(M):
+    a, b = map(int, input().split())
+    adj[a].append(b)    # a → b
+    adj[b].append(a)    # b → a (양방향이니까)
+
+# ─── 방향 그래프 ───
+for _ in range(M):
+    a, b = map(int, input().split())
+    adj[a].append(b)    # a → b 방향만
+
+# ─── 가중치 그래프 ───
+for _ in range(M):
+    a, b, c = map(int, input().split())
+    adj[a].append((b, c))  # (연결 노드, 비용)
+
+# ─── 트리 (부모 배정) ───
+parent = [0] * (N + 1)
+children = [[] for _ in range(N + 1)]
+```
+
+### 그래프/트리 탐색 공통 루프 (BFS·DFS 뼈대)
+
+노드·그래프·트리 문제는 대부분 아래 뼈대에서 시작함. 큐를 쓰면 BFS, 스택(또는 재귀)을 쓰면 DFS.
+
+```python
+from collections import deque
+
+# ═══ 공통 뼈대: "큐/스택 하나 두고 돌면서 체크하고 추가" ═══
+#
+# 1. 시작점을 큐(or 스택)에 넣는다
+# 2. 방문 체크한다
+# 3. 하나 꺼낸다
+# 4. 인접 노드를 보면서 → 방문 안 했으면 → 체크하고 → 큐에 넣는다
+# 5. 큐가 빌 때까지 반복
+#
+# 이 패턴이 BFS, DFS, 다익스트라, 위상 정렬 전부의 기본 골격!
+
+# ─── BFS 버전 (큐 → popleft) ───
+visit = [False] * (N + 1)
+q = deque([start])               # 1. 시작점을 큐에
+visit[start] = True              # 2. 방문 체크
+
+while q:                          # 5. 큐가 빌 때까지
+    u = q.popleft()               # 3. 하나 꺼냄 (FIFO → 가까운 것부터)
+    for v in adj[u]:              # 4. 인접 노드 순회
+        if not visit[v]:          #    방문 안 했으면
+            visit[v] = True       #    체크하고
+            q.append(v)           #    큐에 추가
+
+# ─── DFS 버전 (스택 → pop) ───
+visit = [False] * (N + 1)
+stack = [start]                   # 1. 시작점을 스택에
+
+while stack:                      # 5. 스택이 빌 때까지
+    u = stack.pop()               # 3. 하나 꺼냄 (LIFO → 깊은 곳부터)
+    if visit[u]: continue         # 이미 방문했으면 스킵
+    visit[u] = True               # 2. 방문 체크
+    for v in adj[u]:              # 4. 인접 노드 순회
+        if not visit[v]:
+            stack.append(v)       #    스택에 추가
+
+# ─── DFS 재귀 버전 (스택 대신 콜스택 사용) ───
+def dfs(u):
+    visit[u] = True
+    for v in adj[u]:
+        if not visit[v]:
+            dfs(v)                # 재귀 호출 = 스택 push와 같은 효과
+```
+
+### 2D 격자 탐색 공통 패턴 (미로, 토마토, 섬 등)
+
+```python
+# 격자 문제도 위의 뼈대와 동일. 노드 대신 (x, y) 좌표를 쓸 뿐.
+
+dx = [-1, 1, 0, 0]   # 상, 하, 좌, 우
+dy = [0, 0, -1, 1]
+
+# dist 배열이 visit 역할도 겸함 (-1이면 미방문)
+dist = [[-1]*M for _ in range(N)]
+dist[sx][sy] = 0
+q = deque([(sx, sy)])
+
+while q:
+    x, y = q.popleft()
+    for d in range(4):                   # 4방향 순회 (adj 대신)
+        nx, ny = x + dx[d], y + dy[d]
+        # 범위 체크 + 이동 가능한 칸 + 미방문
+        if 0 <= nx < N and 0 <= ny < M \
+           and grid[nx][ny] != 0 \
+           and dist[nx][ny] == -1:
+            dist[nx][ny] = dist[x][y] + 1
+            q.append((nx, ny))
+```
+
+### 출력 최적화
+
+```python
+# 여러 줄 출력이 많으면 한 번에 모아서 출력
+result = []
+for ...:
+    result.append(str(answer))
+print('\n'.join(result))
+
+# sys.stdout.write가 print보다 빠름
+sys.stdout.write(str(answer) + '\n')
+```
+
+<Tip>BFS·DFS·다익스트라·위상정렬 전부 "큐/스택에 넣고 → 꺼내고 → 체크하고 → 인접 노드 추가"라는 같은 뼈대임. 차이는 **큐냐 스택이냐 힙이냐**, 그리고 **꺼낼 때/넣을 때 무슨 정보를 갱신하냐**만 다름.</Tip>
+</Template>

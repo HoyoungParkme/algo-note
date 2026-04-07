@@ -1,0 +1,64 @@
+---
+id: psum
+num: '11'
+title: 누적합 (Prefix Sum)
+analogy: 통장 잔액이 곧 누적합. "3월~6월 지출" = 6월 잔액 - 2월 잔액
+category: psum
+difficulty: medium
+keywords: [누적합, prefix sum, 슬라이딩 윈도우, 구간 합]
+quiz:
+  q: |
+    psum=[0,3,5,6,9,15]일 때 a[2]+a[3]+a[4]? (1-indexed)
+  options:
+    - '6'
+    - '10'
+    - '9'
+  answer: 1
+  explain: |
+    psum[5]-psum[2]=15-5=10
+---
+
+<Why>
+- 구간 합을 for문 O(N) → 전처리 후 **O(1)**
+- "연속 구간 합" 보이면 가장 먼저 떠올려야 할 기법
+- 2D 확장 시 직사각형 영역 합도 O(1)
+</Why>
+
+<How>
+```text
+psum: [0, 3, 5, 6, 9]  # 앞에 0 추가!
+# 구간 합: a[L]~a[R] = psum[R+1] - psum[L]
+```
+</How>
+
+<Template>
+<Prob tags={['구간 합 구하기', '나머지 합', '2D 구간 합', '연속 K일 최대 매출', 'DNA 비밀번호']} />
+
+### 1D 구간 합 (BOJ 11659)
+
+<SolutionBlock problemId="boj-11659">
+
+```python
+# 앞에 0을 추가하면 경계 처리가 깔끔
+psum = [0] * (N + 1)
+for i in range(N):
+    psum[i+1] = psum[i] + arr[i]    # 누적합 계산
+
+# 쿼리: a[L]~a[R] 구간 합 (1-indexed)
+for _ in range(M):
+    L, R = map(int, input().split())
+    print(psum[R] - psum[L-1])      # O(1)에 구간 합!
+```
+
+</SolutionBlock>
+
+### 슬라이딩 윈도우 — 고정 길이 K 최대합
+
+```python
+# BOJ 21921 블로그, 연속 K일 최대 매출
+ans = cur = sum(arr[:K])           # 첫 윈도우의 합
+for i in range(K, N):
+    cur += arr[i] - arr[i-K]        # 오른쪽 추가, 왼쪽 제거
+    ans = max(ans, cur)              # 최대값 갱신
+```
+</Template>

@@ -1,0 +1,63 @@
+---
+id: boj-2667
+problemNumber: 2667
+title: 단지번호붙이기
+url: https://www.acmicpc.net/problem/2667
+topicId: dfs
+difficulty: medium
+tags: [DFS, BFS, flood fill, 격자]
+timeComplexity: O(N²)
+spaceComplexity: O(N²)
+---
+
+## 문제 요약
+
+N×N 격자에서 1은 집, 0은 빈 공간. 상하좌우로 연결된 집들이 한 단지를 이룬다. **단지 수와 각 단지의 집 수**를 오름차순으로 출력한다.
+
+## 접근
+
+연결 요소 찾기의 격자 버전 (flood fill).
+
+- 모든 칸을 순회
+- 1이고 방문 안 했으면 → DFS/BFS로 연결된 집 모두 방문 + 카운트
+- DFS 호출 횟수 = 단지 수, DFS가 센 칸 수 = 단지 크기
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+sys.setrecursionlimit(10**6)
+
+N = int(input())
+grid = [list(map(int, input().strip())) for _ in range(N)]
+
+dx = [-1, 1, 0, 0]
+dy = [0, 0, -1, 1]
+
+def dfs(x: int, y: int) -> int:
+    grid[x][y] = 0          # 방문 표시 = 집을 빈 공간으로
+    size = 1
+    for d in range(4):
+        nx, ny = x + dx[d], y + dy[d]
+        if 0 <= nx < N and 0 <= ny < N and grid[nx][ny] == 1:
+            size += dfs(nx, ny)
+    return size
+
+sizes = []
+for i in range(N):
+    for j in range(N):
+        if grid[i][j] == 1:
+            sizes.append(dfs(i, j))
+
+sizes.sort()
+print(len(sizes))
+print('\n'.join(map(str, sizes)))
+```
+
+## 핵심 포인트
+
+- **방문 표시 = 1을 0으로 바꾸기**: 별도 visit 배열 없이 grid를 직접 수정 (메모리 절약)
+- **재귀 깊이**: N=25라 작지만 N이 크면 BFS로 변경 (재귀 깊이 N² 가능)
+- DFS가 size를 반환하도록 하면 호출 후 그대로 사용 가능
+- 같은 패턴: BOJ 1012 유기농 배추 (격자 + 다중 단지)

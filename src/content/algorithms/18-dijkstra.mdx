@@ -1,0 +1,63 @@
+---
+id: dijkstra
+num: '18'
+title: 다익스트라 (최단 거리)
+analogy: 네비게이션. 가장 가까운 교차로부터 확정 → 주변 업데이트
+category: dijkstra
+difficulty: hard
+keywords: [다익스트라, dijkstra, 최단경로, heap, 우선순위 큐]
+quiz:
+  q: |
+    음수 간선이 안 되는 이유?
+  options:
+    - '느려서'
+    - '확정 최단거리가 뒤집힐 수 있어서'
+    - 'Python 제한'
+  answer: 1
+  explain: |
+    확정 노드 재방문 안 하므로, 음수면 확정 후 더 짧은 경로 발견 가능
+---
+
+<Why>
+- **가중치 있는** 그래프에서 최단 거리
+- BFS는 가중치 동일할 때만 → 다르면 다익스트라
+- "A→B 최소 비용" 유형의 표준 해법
+</Why>
+
+<How>
+- dist 무한대 초기화, 시작점 0
+- 우선순위 큐에서 가장 가까운 노드 꺼내 확정
+- 이웃 dist 갱신 → 큐 추가
+- **음수 가중치 불가**
+</How>
+
+<Template>
+<Prob tags={['최단경로', '특정 거리의 도시', '파티 (왕복 최단)', '녹색 옷 입은 애', '최소비용 구하기']} />
+
+<SolutionBlock problemId="boj-1916">
+
+```python
+import heapq
+
+def dijkstra(start):
+    dist = [1e9]*(N+1)             # 무한대로 초기화
+    dist[start] = 0                # 시작점 거리 0
+    pq = [(0, start)]              # (거리, 노드) ← 거리가 앞!
+
+    while pq:
+        d, u = heapq.heappop(pq)   # 가장 가까운 노드 꺼냄
+        if d != dist[u]:           # 이미 더 짧은 경로로 확정 → 스킵
+            continue               # (이게 없으면 시간초과 가능!)
+        for v, w in adj[u]:        # adj: (노드, 가중치)
+            if dist[v] > dist[u]+w: # 더 짧은 경로 발견!
+                dist[v] = dist[u]+w
+                heapq.heappush(pq, (dist[v], v))  # pq: (거리, 노드)
+    return dist
+```
+
+</SolutionBlock>
+
+<Warn title="순서 헷갈림 주의">adj: (노드, 가중치) / pq: (거리, 노드) — 첫 원소 기준 정렬이니까 pq에선 거리가 앞</Warn>
+
+<Tip title="반전 그래프 테크닉">"여러 도착점→시작점" 문제: 간선 방향 뒤집고 다익스트라 1회로 해결 (BOJ 1238 파티)</Tip>
+</Template>

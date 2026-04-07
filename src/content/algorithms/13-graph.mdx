@@ -1,0 +1,57 @@
+---
+id: graph
+num: '13'
+title: 그래프 자료구조
+analogy: SNS 친구 관계. 서로 친구=양방향, 팔로우=방향 그래프
+category: graph
+difficulty: medium
+keywords: [graph, 그래프, 인접 리스트, adj, 가중치]
+quiz:
+  q: |
+    양방향 그래프 A-B 연결 시 adj 추가 횟수?
+  options:
+    - '1번'
+    - '2번'
+    - 'N번'
+  answer: 1
+  explain: |
+    adj[A].append(B)와 adj[B].append(A) 두 번
+---
+
+<Why>
+- 연결 관계 표현의 범용 구조 — 네트워크, 지도, 관계
+- BFS, DFS, 다익스트라, 위상 정렬의 **기초**
+- "연결", "경로", "이동" → 그래프 모델링부터
+</Why>
+
+<How>
+인접 리스트(adj)로 "누가 누구와 연결" 저장. 양방향/방향/가중치 구분.
+</How>
+
+<Template>
+<Prob tags={['연결 요소 개수', 'DFS와 BFS', '이분 그래프', '최단 경로', '사이클 판별']} />
+
+<SolutionBlock problemId="boj-11724">
+
+```python
+# ─── 그래프 입력 템플릿 ───
+import sys; input = sys.stdin.readline
+N, M = map(int, input().split())      # N: 노드 수, M: 간선 수
+adj = [[] for _ in range(N+1)]        # 1-indexed 인접 리스트
+
+# 양방향 그래프
+for _ in range(M):
+    a, b = map(int, input().split())
+    adj[a].append(b)                  # a → b
+    adj[b].append(a)                  # b → a (양방향)
+
+visit = [False] * (N+1)               # 방문 체크 (거의 필수)
+
+# ─── 가중치 그래프 (다익스트라용) ───
+for _ in range(M):
+    a, b, c = map(int, input().split())
+    adj[a].append((b, c))             # (연결 노드, 비용) 튜플
+```
+
+</SolutionBlock>
+</Template>

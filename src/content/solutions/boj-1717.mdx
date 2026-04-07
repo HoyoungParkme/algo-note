@@ -1,0 +1,71 @@
+---
+id: boj-1717
+problemNumber: 1717
+title: 집합의 표현
+url: https://www.acmicpc.net/problem/1717
+topicId: unionfind
+difficulty: hard
+tags: [유니온-파인드, DSU]
+timeComplexity: O((N + M) α(N))
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+0~n번 원소가 각각 다른 집합에 속해 있다. m개의 연산 (합치기 또는 같은 집합 여부 확인)을 처리한다.
+
+- `0 a b`: a, b가 속한 집합을 합친다
+- `1 a b`: a, b가 같은 집합인지 (`YES` / `NO`)
+
+## 접근
+
+**유니온-파인드**의 기본형. 경로 압축 + 랭크(또는 사이즈)로 거의 O(1).
+
+- `parent[x]`: x의 부모. 초기에는 자기 자신 (각자 별도 집합)
+- `find(x)`: 루트를 찾고 거치는 노드의 부모를 모두 루트로 압축
+- `union(a, b)`: 두 루트를 비교해 연결
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+sys.setrecursionlimit(10**6)
+
+n, m = map(int, input().split())
+parent = list(range(n + 1))
+rank_ = [0] * (n + 1)
+
+def find(x: int) -> int:
+    if parent[x] != x:
+        parent[x] = find(parent[x])    # 경로 압축
+    return parent[x]
+
+def union(a: int, b: int) -> None:
+    ra, rb = find(a), find(b)
+    if ra == rb:
+        return
+    if rank_[ra] < rank_[rb]:
+        ra, rb = rb, ra
+    parent[rb] = ra
+    if rank_[ra] == rank_[rb]:
+        rank_[ra] += 1
+
+out = []
+for _ in range(m):
+    op, a, b = map(int, input().split())
+    if op == 0:
+        union(a, b)
+    else:
+        out.append('YES' if find(a) == find(b) else 'NO')
+
+sys.stdout.write('\n'.join(out) + '\n')
+```
+
+## 핵심 포인트
+
+- **경로 압축**: `parent[x] = find(parent[x])`. 한 번의 find로 거친 노드들이 모두 루트에 직접 연결됨
+- **랭크 기반 합치기**: 작은 트리를 큰 트리 밑에 → 트리 높이가 O(log N)으로 유지
+- 두 최적화를 같이 쓰면 사실상 상수 시간 (역 아커만 함수 α)
+- **재귀 깊이**: N=10⁶ 가능 → `setrecursionlimit` 필요
+- 활용: 사이클 판별, 크루스칼 MST, 친구 관계

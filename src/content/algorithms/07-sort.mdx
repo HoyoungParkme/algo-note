@@ -1,0 +1,58 @@
+---
+id: sort
+num: '07'
+title: 정렬
+analogy: 도서관 책이 번호순이면 바로 찾고, 뒤죽박죽이면 끝까지 뒤져야 함
+category: sort
+difficulty: easy
+keywords: [정렬, sort, key, lambda, TimSort]
+quiz:
+  q: |
+    Python sort()의 시간 복잡도?
+  options:
+    - 'O(N)'
+    - 'O(N log N)'
+    - 'O(N²)'
+    - 'O(log N)'
+  answer: 1
+  explain: |
+    TimSort — 평균·최악 모두 O(N log N)
+---
+
+<Why>
+- 정렬하면 이분탐색, 투포인터, 그리디 등 **빠른 알고리즘 사용 가능**
+- "K번째 큰 값", "중복 제거", "합이 X인 쌍" 등 정렬이 전처리인 문제 많음
+- **key 함수를 잘 쓰는 게 핵심** — 다중 조건 정렬
+</Why>
+
+<How>
+`sort()` O(N log N). 직접 구현할 일 거의 없고, key/lambda 활용이 핵심.
+</How>
+
+<Template>
+<Prob tags={['좌표 정렬', '단어 정렬', '회의실 배정 (전처리)', 'K번째 수', '국영수 다중 조건 정렬']} />
+
+<SolutionBlock problemId="boj-10825">
+
+```python
+# ─── 기본 ───
+arr.sort()                                     # 오름차순 (원본 변경)
+arr.sort(reverse=True)                         # 내림차순
+new_arr = sorted(arr)                          # 새 배열 반환 (원본 유지)
+
+# ─── 커스텀 정렬 (코테 핵심!) ───
+arr.sort(key=lambda x: x[1])                  # 두 번째 원소 기준
+arr.sort(key=lambda x: (x[1], -x[0]))         # 2번째 오름↑, 같으면 1번째 내림↓
+words.sort(key=lambda x: (len(x), x))         # 길이순 → 같으면 사전순
+
+# ─── 딕셔너리 정렬 ───
+sorted(d.items(), key=lambda x: x[1])         # value 기준
+sorted(d.items(), key=lambda x: -x[1])        # value 내림차순
+
+# ─── 국영수 문제 (BOJ 10825) 다중 정렬 ───
+# 국어 내림, 영어 오름, 수학 내림, 이름 오름
+students.sort(key=lambda x: (-x[1], x[2], -x[3], x[0]))
+```
+
+</SolutionBlock>
+</Template>

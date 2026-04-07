@@ -1,0 +1,49 @@
+---
+id: skill-debug
+num: '03'
+title: 디버깅 & 실수 방지
+analogy: 코테에서 시간을 잡아먹는 건 알고리즘이 아니라 디버깅이다
+category: meta
+difficulty: easy
+keywords: [디버깅, 실수, indexing, 재귀 깊이, 시간초과]
+---
+
+<Why>
+- 코테에서 시간을 잡아먹는 건 **알고리즘이 아니라 버그**
+- 같은 실수를 반복하지 않으려면 체크리스트화가 효과적
+- 미리 알면 처음부터 안 만든다
+</Why>
+
+<How>
+### 흔한 실수 TOP 10
+
+| # | 실수 | 해결 |
+|:--|:--|:--|
+| 1 | 0-indexed / 1-indexed 혼동 | 문제 읽고 인덱스 기준 통일. adj를 N+1로 만드는 습관 |
+| 2 | visit 체크를 큐에 넣을 때 안 하고 꺼낼 때 함 | 큐에 넣는 시점에 visit 체크해야 중복 방지 |
+| 3 | `[[0]*M]*N`으로 2D 배열 생성 | `for _ in range(N)`으로 각 행 개별 생성 |
+| 4 | 재귀 깊이 제한 (RecursionError) | `sys.setrecursionlimit(10**6)` 또는 반복문 DFS |
+| 5 | input() 느려서 시간초과 | `sys.stdin.readline` 사용 |
+| 6 | 그래프 방향 잘못 넣음 (양방향인데 한쪽만) | 문제에서 "양방향"/"단방향" 명확히 확인 |
+| 7 | 다익스트라 adj와 pq 순서 혼동 | adj: (노드,가중치), pq: (거리,노드) 고정 |
+| 8 | DP 초기값 누락 | dp[0], dp[1] 등 기저 조건 먼저 설정 |
+| 9 | 정렬 안 하고 이분탐색/투포인터 사용 | 정렬 전제 조건 확인 |
+| 10 | 리스트 참조 vs 복사 혼동 | 수정할 거면 `[:]` 또는 `copy.deepcopy` |
+</How>
+
+<Template>
+### 디버깅 전략
+
+```python
+# ─── 중간값 출력 (가장 기본적인 디버깅) ───
+print(f"DEBUG: node={node}, dist={dist[node]}")
+
+# ─── 2D 배열 예쁘게 출력 ───
+for row in grid:
+    print(*row)
+
+# ─── 제출 전 디버그 출력 끄기 ───
+DEBUG = False
+if DEBUG: print(f"...")
+```
+</Template>

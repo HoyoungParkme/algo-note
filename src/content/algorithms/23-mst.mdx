@@ -1,0 +1,73 @@
+---
+id: mst
+num: '23'
+title: 최소 신장 트리 (MST, 크루스칼)
+analogy: 마을 여러 개를 도로로 연결할 때, 모든 마을이 이어지면서 도로 건설 비용이 최소가 되게
+category: mst
+difficulty: hard
+unlearned: true
+keywords: [MST, 최소신장트리, 크루스칼, Kruskal, 프림]
+quiz:
+  q: |
+    크루스칼에서 간선을 선택할 때 사이클 판별에 쓰는 자료구조는?
+  options:
+    - '스택'
+    - '유니온-파인드'
+    - '우선순위 큐'
+  answer: 1
+  explain: |
+    find(a) != find(b)이면 사이클 안 생김 → 선택. 같으면 이미 연결됨 → 스킵
+---
+
+<Why>
+- "모든 노드를 **최소 비용**으로 연결"하는 문제
+- 네트워크 설계, 도로 건설, 배선 문제 등
+- 크루스칼 = **간선을 비용순 정렬** + **유니온-파인드**로 사이클 체크
+</Why>
+
+<How>
+- 모든 간선을 비용 오름차순으로 정렬
+- 가장 싼 간선부터 하나씩 선택
+- 사이클이 생기면(같은 그룹이면) 건너뜀
+- N-1개 간선을 선택하면 완성
+</How>
+
+<Template>
+<Prob tags={['최소 스패닝 트리', '도시 분할 계획', '네트워크 연결', '전력난', '행성 터널']} />
+
+### 크루스칼 알고리즘 (BOJ 1197)
+
+<SolutionBlock problemId="boj-1197">
+
+```python
+# 유니온-파인드 함수 (위의 find, union 그대로 사용)
+parent = list(range(N + 1))
+rank = [0] * (N + 1)
+
+# 간선 입력: (비용, 노드a, 노드b)
+edges = []
+for _ in range(M):
+    a, b, c = map(int, input().split())
+    edges.append((c, a, b))      # 비용을 앞에 → 정렬 편함
+
+# 1. 비용순 정렬
+edges.sort()
+
+# 2. 가장 싼 간선부터 선택
+total_cost = 0
+edge_count = 0
+for cost, a, b in edges:
+    if find(a) != find(b):       # 3. 사이클 안 생기면 (다른 그룹이면)
+        union(a, b)               #    합치고
+        total_cost += cost        #    비용 누적
+        edge_count += 1
+        if edge_count == N - 1:   # 4. N-1개 간선 선택 완료
+            break
+
+print(total_cost)
+```
+
+</SolutionBlock>
+
+<Tip title="크루스칼 vs 프림">크루스칼 = 간선 중심 (정렬+유파), 프림 = 노드 중심 (우선순위 큐). 간선이 적으면 크루스칼, 많으면 프림이 유리. 코테에서는 크루스칼이 더 많이 출제됨.</Tip>
+</Template>

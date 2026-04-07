@@ -1,0 +1,81 @@
+---
+id: dp
+num: '19'
+title: 다이나믹 프로그래밍 (DP)
+analogy: 계단 오르기. 10번째 = 9번째 + 8번째. 작은 답 저장 재활용
+category: dp
+difficulty: hard
+keywords: [DP, dynamic programming, 점화식, 메모이제이션, 배낭, LIS]
+quiz:
+  q: |
+    DP의 핵심 아이디어?
+  options:
+    - '모든 경우 시도'
+    - '작은 문제 답 저장 재활용'
+    - '매번 최선 선택'
+  answer: 1
+  explain: |
+    완전탐색=모든 경우, 그리디=매번 최선, DP=메모이제이션
+---
+
+<Why>
+- **같은 하위 문제 반복** → 결과 저장으로 중복 제거
+- 완전탐색 O(2^N) → DP로 O(N), O(N²)으로 축소
+- "최소/최대/경우의 수" + "순서 있는 선택" → DP 의심
+</Why>
+
+<How>
+- dp[i] 정의 → 점화식 → 초기값 → 채우기 → 답 추출
+</How>
+
+<Template>
+<Prob tags={['피보나치 수', '계단 오르기', '1로 만들기', '가장 긴 증가 부분수열 (LIS)', '배낭 문제 (Knapsack)', '동전 교환', 'RGB 거리']} />
+
+### 1D DP — 계단 오르기 (BOJ 2579)
+
+```python
+# dp[i] = i번째 계단까지 최대 점수
+dp = [0]*(N+1)
+dp[1] = stairs[1]
+dp[2] = stairs[1] + stairs[2]
+
+for i in range(3, N+1):
+    dp[i] = max(
+        dp[i-2] + stairs[i],               # 2칸 점프
+        dp[i-3] + stairs[i-1] + stairs[i]  # 1+1 (연속 3칸 방지)
+    )
+```
+
+### 2D DP — 배낭 (BOJ 12865)
+
+```python
+# dp[i][w] = i번째 물건까지, 무게 w일 때 최대 가치
+dp = [[0]*(W+1) for _ in range(N+1)]
+for i in range(1, N+1):
+    wi, vi = items[i]                      # 무게, 가치
+    for w in range(W+1):
+        if w >= wi:
+            dp[i][w] = max(dp[i-1][w],     # 안 넣기
+                           dp[i-1][w-wi]+vi) # 넣기
+        else:
+            dp[i][w] = dp[i-1][w]          # 못 넣음
+```
+
+### LIS — 가장 긴 증가 부분수열 (BOJ 11053)
+
+<SolutionBlock problemId="boj-11053">
+
+```python
+# dp[i] = arr[i]로 끝나는 LIS 길이
+dp = [1] * N                              # 자기 자신만 포함 = 1
+for i in range(1, N):
+    for j in range(i):                    # i 이전의 모든 원소
+        if arr[j] < arr[i]:               # 증가하는 관계면
+            dp[i] = max(dp[i], dp[j]+1)   # LIS 길이 갱신
+print(max(dp))
+```
+
+</SolutionBlock>
+
+<Tip title="DP 풀이 순서">1. dp[i] 정의 → 2. 점화식 → 3. 초기값 → 4. 채우기 → 5. 답 추출</Tip>
+</Template>

@@ -1,0 +1,68 @@
+---
+id: pq
+num: '14'
+title: 우선순위 큐
+analogy: 응급실 대기. 위급한 환자부터 치료
+category: pq
+difficulty: medium
+keywords: [heap, 우선순위 큐, heapq, 최소 힙, 최대 힙]
+quiz:
+  q: |
+    heapq 최대값 먼저 꺼내려면?
+  options:
+    - 'heappop_max()'
+    - '부호 뒤집기(-x)'
+    - 'reverse=True'
+  answer: 1
+  explain: |
+    최소 힙만 지원. -x로 넣고 -x로 꺼냄
+---
+
+<Why>
+- "가장 작은/큰 값"을 **O(log N)에 추출**
+- 다익스트라, 프림(MST), 허프만의 핵심 부품
+- 삽입하면서 동시에 최솟값 뽑기 → 정렬보다 효율적
+</Why>
+
+<How>
+`heapq` 사용 (PriorityQueue보다 빠름). 최소 힙만 지원 → 최대는 부호 뒤집기.
+</How>
+
+<Template>
+<Prob tags={['절댓값 힙', '카드 합치기', '다익스트라', '최소 스패닝 트리', '중앙값 구하기']} />
+
+<SolutionBlock problemId="boj-1715">
+
+```python
+import heapq
+
+# ─── 기본 사용법 ───
+pq = []
+heapq.heappush(pq, 3)            # 삽입 O(log N)
+heapq.heappush(pq, 1)
+val = heapq.heappop(pq)          # 최솟값 추출 → 1
+
+# ─── 최대 힙 트릭 (부호 뒤집기) ───
+heapq.heappush(pq, -5)           # 5를 넣고 싶을 때 -5로
+max_val = -heapq.heappop(pq)     # 꺼낼 때 다시 - → 5
+
+# ─── 튜플: 첫 번째 원소 기준 정렬 ───
+heapq.heappush(pq, (3, "C"))
+heapq.heappush(pq, (1, "A"))
+heapq.heappop(pq)                # → (1, "A") 거리가 작은 것 먼저
+
+# ─── 배열을 힙으로 변환 ───
+heapq.heapify(arr)               # O(N)에 힙 구조로
+
+# ─── 카드 합치기 (BOJ 1715) ───
+pq = cards[:]; heapq.heapify(pq)
+total = 0
+while len(pq) > 1:
+    a = heapq.heappop(pq)        # 가장 작은 카드 두 장
+    b = heapq.heappop(pq)
+    total += a + b               # 합치는 비용 누적
+    heapq.heappush(pq, a + b)    # 합친 카드 다시 넣기
+```
+
+</SolutionBlock>
+</Template>

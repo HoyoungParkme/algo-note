@@ -1,0 +1,64 @@
+---
+id: tree
+num: '12'
+title: 트리 자료구조
+analogy: 가계도. 할아버지=루트, 자녀 없으면=리프
+category: tree
+difficulty: medium
+keywords: [tree, 트리, 부모, 리프, LCA, 서브트리]
+quiz:
+  q: |
+    리프 노드의 특징?
+  options:
+    - '부모 없음'
+    - '자식 없음'
+    - '자식 2개'
+  answer: 1
+  explain: |
+    리프 = 자식이 없는 끝 노드
+---
+
+<Why>
+- 계층 관계(조직도, 폴더, 카테고리) 표현
+- 이진 탐색 트리, 세그먼트 트리의 기반
+- "부모-자식", "루트 거리", "LCA", "서브트리" 문제
+</Why>
+
+<How>
+저장: **부모 배열** 또는 **자식 리스트**. 보통 adj로 입력 받고 BFS/DFS로 부모 확정.
+</How>
+
+<Template>
+<Prob tags={['트리의 부모 찾기', '트리의 지름', '트리 순회', 'LCA (공통 조상)', '서브트리 크기']} />
+
+<SolutionBlock problemId="boj-11725">
+
+```python
+# ─── 입력 → 트리 구성 (BFS로 부모 배정) ───
+# BOJ 11725 트리의 부모 찾기
+from collections import deque
+N = int(input())
+adj = [[] for _ in range(N+1)]    # 인접 리스트
+parent = [0] * (N+1)              # parent[i] = i의 부모
+
+for _ in range(N-1):              # 간선 N-1개 입력
+    a, b = map(int, input().split())
+    adj[a].append(b)              # 양방향 연결
+    adj[b].append(a)
+
+# BFS로 루트(1)부터 탐색하며 부모 확정
+visit = [False]*(N+1)
+q = deque([1]); visit[1] = True
+while q:
+    u = q.popleft()
+    for v in adj[u]:
+        if not visit[v]:
+            visit[v] = True
+            parent[v] = u         # v의 부모는 u
+            q.append(v)
+```
+
+</SolutionBlock>
+
+<Warn title="복사 vs 참조">`stack=children[2]` → 참조(원본 변경) / `stack=children[2][:]` → 복사(안전)</Warn>
+</Template>

@@ -1,0 +1,50 @@
+---
+id: boj-10825
+problemNumber: 10825
+title: 국영수
+url: https://www.acmicpc.net/problem/10825
+topicId: sort
+difficulty: easy
+tags: [정렬, 다중 키]
+timeComplexity: O(N log N)
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+N명의 학생에 대해 (이름, 국어, 영어, 수학) 정보가 주어진다. 다음 우선순위로 정렬한 결과를 출력:
+1. 국어 점수 **내림차순**
+2. 국어 같으면 영어 **오름차순**
+3. 영어 같으면 수학 **내림차순**
+4. 수학 같으면 이름 **사전순(오름차순)**
+
+## 접근
+
+`sort(key=...)`에 튜플을 주면 첫 원소부터 비교한다. 내림차순은 부호를 뒤집으면 된다.
+
+- key: `(-국어, 영어, -수학, 이름)`
+- 숫자는 부호로 방향 제어, 문자열은 그대로 사전순
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+
+N = int(input())
+students = []
+for _ in range(N):
+    name, k, e, m = input().split()
+    students.append((name, int(k), int(e), int(m)))
+
+students.sort(key=lambda x: (-x[1], x[2], -x[3], x[0]))
+
+print('\n'.join(s[0] for s in students))
+```
+
+## 핵심 포인트
+
+- **다중 키 정렬의 핵심 패턴**: 튜플 key + 숫자는 부호 반전으로 방향 조절
+- 문자열도 부호 반전이 필요하면? `key=lambda x: (-ord(x[0]), ...)`처럼 한 글자씩 처리 (대신 사전 역순은 어려우므로 보통 데이터를 통째로 reverse)
+- N ≤ 100,000 → O(N log N) 정렬로 충분
+- 출력은 `'\n'.join()`으로 한 번에 → print 반복보다 빠름

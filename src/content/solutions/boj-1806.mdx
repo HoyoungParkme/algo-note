@@ -1,0 +1,53 @@
+---
+id: boj-1806
+problemNumber: 1806
+title: 부분합
+url: https://www.acmicpc.net/problem/1806
+topicId: twoptr
+difficulty: medium
+tags: [투 포인터, 슬라이딩 윈도우]
+timeComplexity: O(N)
+spaceComplexity: O(1)
+---
+
+## 문제 요약
+
+길이 N의 양수 수열이 있다. 부분합이 **S 이상**이 되는 가장 짧은 연속 부분 수열의 길이를 구한다. (조건을 만족하는 게 없으면 0)
+
+## 접근
+
+투 포인터 (슬라이딩 윈도우). 두 포인터 `left`, `right`를 이용해 윈도우 합을 유지한다.
+
+- `right`를 한 칸씩 늘리며 윈도우 합 `cur`에 더함
+- `cur >= S`인 동안 → 답 갱신 + `left`를 증가시켜 윈도우 축소
+- 양수만 있으므로 단조성 보장 (left를 줄이면 cur 증가, right를 늘리면 cur 증가)
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+
+N, S = map(int, input().split())
+arr = list(map(int, input().split()))
+
+left = 0
+cur = 0
+ans = float('inf')
+
+for right in range(N):
+    cur += arr[right]
+    while cur >= S:
+        ans = min(ans, right - left + 1)
+        cur -= arr[left]
+        left += 1
+
+print(0 if ans == float('inf') else ans)
+```
+
+## 핵심 포인트
+
+- **윈도우 길이**: `right - left + 1`
+- **양수 가정**이 단조성의 핵심. 음수가 섞이면 슬라이딩 윈도우 불가 → 누적합 + 이분탐색 등 다른 접근 필요
+- 답이 갱신되지 않은 경우 (`ans == inf`) → 0 출력
+- O(N): 각 인덱스가 left/right로 한 번씩만 처리됨

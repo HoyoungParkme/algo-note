@@ -1,0 +1,59 @@
+---
+id: boj-2178
+problemNumber: 2178
+title: 미로 탐색
+url: https://www.acmicpc.net/problem/2178
+topicId: bfs
+difficulty: medium
+tags: [BFS, 격자, 최단 거리]
+timeComplexity: O(N · M)
+spaceComplexity: O(N · M)
+---
+
+## 문제 요약
+
+N×M 격자에서 1은 길, 0은 벽이다. (0,0)에서 (N-1, M-1)까지 지나야 하는 **최소 칸 수**(시작과 끝 포함)를 구한다. 상하좌우로만 이동.
+
+## 접근
+
+가중치 없는 격자 → **BFS로 최단 거리** 보장. `dist[x][y]`에 현재까지 이동한 칸 수를 저장.
+
+- 시작점 dist를 1로 (시작 칸 포함)
+- 큐에서 꺼낼 때마다 4방향 이웃 확인
+- 범위 내 + 길(grid==1) + 미방문(dist==0)이면 dist 갱신 + 큐에 추가
+
+## 풀이 코드
+
+```python
+import sys
+from collections import deque
+input = sys.stdin.readline
+
+N, M = map(int, input().split())
+grid = [list(map(int, input().strip())) for _ in range(N)]
+
+dx = [-1, 1, 0, 0]
+dy = [0, 0, -1, 1]
+
+dist = [[0] * M for _ in range(N)]
+dist[0][0] = 1
+q = deque([(0, 0)])
+
+while q:
+    x, y = q.popleft()
+    for d in range(4):
+        nx, ny = x + dx[d], y + dy[d]
+        if 0 <= nx < N and 0 <= ny < M:
+            if grid[nx][ny] == 1 and dist[nx][ny] == 0:
+                dist[nx][ny] = dist[x][y] + 1
+                q.append((nx, ny))
+
+print(dist[N - 1][M - 1])
+```
+
+## 핵심 포인트
+
+- **입력은 붙어있는 숫자 (`"0110"`)** → `list(map(int, input().strip()))`로 한 글자씩
+- **시작 dist=1**: 문제가 시작 칸도 포함해서 세므로 1부터
+- **dist 배열이 visit 역할**도 겸함 — 0이면 미방문
+- BFS의 가장 정형적인 격자 문제. 여기서 변형이 모두 파생 (벽 부수기, 다중 시작점 등)

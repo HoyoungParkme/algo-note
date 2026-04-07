@@ -1,0 +1,74 @@
+---
+id: dfs
+num: '17'
+title: DFS (깊이 우선 탐색)
+analogy: 국어 마스터→영어→수학. 한 방향 끝까지 파고든 뒤 돌아옴
+category: dfs
+difficulty: medium
+keywords: [DFS, 깊이우선, 스택, 재귀, 연결 요소]
+quiz:
+  q: |
+    BFS는 큐, DFS는 ____
+  options:
+    - '큐'
+    - '스택'
+    - '해시맵'
+  answer: 1
+  explain: |
+    DFS=스택(LIFO). 재귀 자체가 콜 스택 사용
+---
+
+<Why>
+- **연결 요소 개수**, 사이클 감지, 트리 순회
+- BFS보다 구현 간단 (재귀 한 줄)
+- "모든 경로", "백트래킹" → DFS 기반
+</Why>
+
+<How>
+스택 또는 재귀. 한 방향 끝까지 → 돌아와서 다음 방향.
+</How>
+
+<Template>
+<Prob tags={['연결 요소 개수', 'DFS와 BFS', '바이러스', '유기농 배추', 'N-Queen (백트래킹)', '섬의 개수']} />
+
+### 재귀 DFS
+
+<SolutionBlock problemId="boj-2667">
+
+```python
+import sys; sys.setrecursionlimit(10**6)  # 재귀 제한 해제!
+
+def dfs(u):
+    visit[u] = True             # 방문 체크
+    for v in adj[u]:            # 인접 노드 순회
+        if not visit[v]:
+            dfs(v)              # 재귀 호출 (깊이 우선)
+```
+
+</SolutionBlock>
+
+### 반복문 DFS (재귀 깊이 걱정 없음)
+
+```python
+def dfs_iter(start):
+    stack = [start]            # 스택에 시작점
+    while stack:
+        u = stack.pop()        # LIFO: 가장 최근 것부터
+        if visit[u]: continue  # 이미 방문했으면 스킵
+        visit[u] = True
+        for v in adj[u]:
+            if not visit[v]:
+                stack.append(v)
+```
+
+### 연결 요소 개수 (BOJ 11724)
+
+```python
+count = 0
+visit = [False]*(N+1)
+for i in range(1, N+1):
+    if not visit[i]:         # 아직 방문 안 한 노드 발견
+        dfs(i)               # 거기서 DFS → 연결된 것 전부 방문
+        count += 1           # DFS 1번 = 연결 요소 1개
+```
+</Template>

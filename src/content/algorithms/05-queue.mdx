@@ -1,0 +1,69 @@
+---
+id: queue
+num: '05'
+title: 큐 (Queue)
+analogy: 은행 대기줄. 먼저 온 사람이 먼저 처리됨 (FIFO)
+category: queue
+difficulty: easy
+keywords: [queue, FIFO, deque, BFS, 요세푸스]
+quiz:
+  q: |
+    list.pop(0) 대신 deque.popleft() 쓰는 이유?
+  options:
+    - '기능이 다름'
+    - 'pop(0)은 O(N), popleft()는 O(1)'
+    - '메모리 절약'
+  answer: 1
+  explain: |
+    list.pop(0)은 나머지 원소를 한 칸씩 당겨야 O(N). deque는 양쪽 O(1)
+---
+
+<Why>
+- **FIFO**(First In, First Out) — 순서대로 처리
+- **BFS의 핵심 자료구조** — 가까운 노드부터 순서대로
+- "프린터 큐", "요세푸스", "캐시(LRU)" 등에 사용
+</Why>
+
+<How>
+- Python `list.pop(0)`은 **O(N)** → **반드시 deque 사용**
+- `deque.append(x)` — 오른쪽 추가 O(1)
+- `deque.popleft()` — 왼쪽 제거 O(1)
+- `deque.appendleft(x)` — 왼쪽 추가 (양방향)
+</How>
+
+<Template>
+<Prob tags={['BFS 전체', '프린터 큐', '요세푸스 문제', '뱀 게임', '회전하는 큐']} />
+
+<SolutionBlock problemId="boj-1158">
+
+```python
+from collections import deque
+
+# ─── 기본 큐 ───
+q = deque()
+q.append(1)          # 뒤에 추가 → [1]
+q.append(2)          # 뒤에 추가 → [1, 2]
+q.popleft()          # 앞에서 꺼냄 → 1 반환, [2]
+
+# ─── BFS 패턴 (큐의 가장 흔한 활용) ───
+q = deque([start])           # 시작점을 큐에 넣고
+visit[start] = True          # 방문 체크
+while q:                     # 큐가 빌 때까지
+    node = q.popleft()       # 가장 먼저 넣은 걸 꺼냄 (FIFO)
+    for nb in adj[node]:     # 인접 노드 순회
+        if not visit[nb]:    # 아직 방문 안 했으면
+            visit[nb] = True
+            q.append(nb)     # 큐에 추가 (나중에 방문)
+
+# ─── 요세푸스 문제 (N명 원형, K번째 제거) ───
+q = deque(range(1, N+1))     # 1~N번 사람
+result = []
+while q:
+    q.rotate(-(K-1))          # K-1번 왼쪽 회전 (앞→뒤로 이동)
+    result.append(q.popleft()) # K번째 사람 제거
+```
+
+</SolutionBlock>
+
+<Warn title="성능 주의">`list.pop(0)`은 O(N)! 나머지를 전부 당겨야 해서 느림. 큐는 반드시 `deque`</Warn>
+</Template>

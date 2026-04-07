@@ -1,0 +1,80 @@
+---
+id: floyd
+num: '24'
+title: 플로이드-워셜
+analogy: 네비게이션에 모든 출발지-도착지 조합의 최단 경로를 미리 다 계산해두는 것
+category: floyd
+difficulty: hard
+unlearned: true
+keywords: [플로이드, Floyd-Warshall, 모든 쌍 최단거리, 3중 for문]
+quiz:
+  q: |
+    플로이드-워셜에서 3중 for문의 바깥 루프는?
+  options:
+    - '출발지 i'
+    - '도착지 j'
+    - '경유지 k'
+  answer: 2
+  explain: |
+    k(경유지)가 바깥이어야 "k까지 고려한 최단 거리"를 올바르게 확장하는 DP가 됨
+---
+
+<Why>
+- **모든 노드 쌍** 사이의 최단 거리를 한 번에 구함
+- 다익스트라가 "한 점 → 전체"이면, 플로이드는 "전체 → 전체"
+- N ≤ 500이면 사용 가능 (O(N³)). 구현이 3중 for문이라 매우 간단
+</Why>
+
+<How>
+- dist[i][j] = i에서 j로 가는 최단 거리 (2D 배열)
+- 핵심 아이디어: "i→j"보다 "i→**k**→j"가 더 짧으면 갱신
+- 모든 경유지 k에 대해 반복 → 3중 for문
+- **k가 가장 바깥 루프** (순서 중요!)
+</How>
+
+<Template>
+<Prob tags={['플로이드', '경로 찾기', '운동 (최소 사이클)', '키 순서', '회장뽑기']} />
+
+### 플로이드-워셜 (BOJ 11404)
+
+<SolutionBlock problemId="boj-11404">
+
+```python
+INF = 1e9
+
+# dist[i][j] = i→j 최단 거리 (초기: 무한대)
+dist = [[INF]*(N+1) for _ in range(N+1)]
+for i in range(N+1):
+    dist[i][i] = 0                  # 자기 자신까지 거리 = 0
+
+# 간선 입력
+for _ in range(M):
+    a, b, c = map(int, input().split())
+    dist[a][b] = min(dist[a][b], c)  # 중복 간선 중 최소만
+
+# ═══ 핵심: 3중 for문 (k가 가장 바깥!) ═══
+for k in range(1, N+1):            # 경유지 k
+    for i in range(1, N+1):        # 출발지 i
+        for j in range(1, N+1):    # 도착지 j
+            # i→j 직행보다 i→k→j 경유가 더 짧으면 갱신
+            if dist[i][j] > dist[i][k] + dist[k][j]:
+                dist[i][j] = dist[i][k] + dist[k][j]
+
+# 결과: dist[i][j] = i에서 j까지 최단 거리
+```
+
+</SolutionBlock>
+
+<Warn title="k가 바깥인 이유">"k번 노드까지 경유지로 고려한 최단 거리"를 단계적으로 확장하는 DP이기 때문. k를 안쪽에 넣으면 갱신 순서가 꼬여서 틀린 답이 나옴.</Warn>
+
+### 경로 존재 여부만 확인 (BOJ 11403)
+
+```python
+# dist 대신 bool 배열, min 대신 or
+for k in range(N):
+    for i in range(N):
+        for j in range(N):
+            if reach[i][k] and reach[k][j]:
+                reach[i][j] = True
+```
+</Template>

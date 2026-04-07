@@ -1,0 +1,63 @@
+---
+id: boj-11724
+problemNumber: 11724
+title: 연결 요소의 개수
+url: https://www.acmicpc.net/problem/11724
+topicId: graph
+difficulty: easy
+tags: [그래프, DFS, BFS, 연결 요소]
+timeComplexity: O(N + M)
+spaceComplexity: O(N + M)
+---
+
+## 문제 요약
+
+방향 없는 그래프가 주어진다. 연결 요소(connected component)의 개수를 구한다.
+
+## 접근
+
+방문 안 한 노드를 발견할 때마다 거기서 DFS/BFS로 연결된 모든 노드를 한 번에 방문하면, **DFS를 부른 횟수가 곧 연결 요소의 개수**다.
+
+- `visit` 배열을 만들고 1~N을 순회
+- 방문 안 한 노드를 만나면 → 거기서 BFS/DFS 시작 + 카운트 +1
+
+## 풀이 코드
+
+```python
+import sys
+from collections import deque
+input = sys.stdin.readline
+
+N, M = map(int, input().split())
+adj = [[] for _ in range(N + 1)]
+for _ in range(M):
+    u, v = map(int, input().split())
+    adj[u].append(v)
+    adj[v].append(u)
+
+visit = [False] * (N + 1)
+count = 0
+
+for start in range(1, N + 1):
+    if visit[start]:
+        continue
+    # BFS로 연결된 노드 모두 방문
+    q = deque([start])
+    visit[start] = True
+    while q:
+        u = q.popleft()
+        for v in adj[u]:
+            if not visit[v]:
+                visit[v] = True
+                q.append(v)
+    count += 1
+
+print(count)
+```
+
+## 핵심 포인트
+
+- **방문 체크는 큐에 넣을 때** (꺼낼 때 X) → 같은 노드 중복 큐 삽입 방지
+- 재귀 DFS로도 가능하지만 N=1000으로 작아 그냥 BFS로 안전하게
+- 그래프가 전부 연결이면 답이 1, 노드만 있고 간선이 0이면 답이 N
+- 후속 응용: 같은 패턴 + 격자에서는 단지 번호 붙이기 (BOJ 2667)

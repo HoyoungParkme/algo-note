@@ -1,0 +1,74 @@
+---
+id: binary
+num: '06'
+title: 이분 탐색
+analogy: 국어사전에서 "호랑이" 찾기 — 중간을 펼쳐서 범위를 반씩 줄이는 것
+category: binary
+difficulty: medium
+keywords: [이분탐색, binary search, 파라메트릭, log N]
+quiz:
+  q: |
+    길이 1,000,000 정렬 배열, 이분 탐색 최대 비교?
+  options:
+    - '약 20번'
+    - '약 100번'
+    - '약 1000번'
+    - '약 500000번'
+  answer: 0
+  explain: |
+    log₂(1,000,000) ≈ 20
+---
+
+<Why>
+- 정렬 배열에서 for문 O(N) → 이분 탐색 **O(log N)**
+- "조건 만족하는 최솟값/최댓값" = 파라메트릭 서치에도 활용
+- N이 10억이어도 약 30번 비교면 끝
+</Why>
+
+<How>
+`left`, `right` 범위를 잡고, 중간값과 target 비교 → 반씩 줄인다. **전제: 배열 정렬**
+</How>
+
+<Template>
+<Prob tags={['정렬 배열에서 값 찾기', '나무 자르기 (파라메트릭)', '랜선 자르기', '예산 배정', '공유기 설치 (최대 최솟값)']} />
+
+### 기본: 값 존재 여부
+
+<SolutionBlock problemId="boj-2805">
+
+```python
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1   # 탐색 범위의 양 끝
+    while left <= right:                # 범위가 유효한 동안
+        mid = (left + right) // 2       # 중간 인덱스
+        if arr[mid] == target:
+            return mid                  # 찾음!
+        elif arr[mid] < target:
+            left = mid + 1              # target이 오른쪽에 있음
+        else:
+            right = mid - 1             # target이 왼쪽에 있음
+    return -1                           # 못 찾음
+```
+
+</SolutionBlock>
+
+### 파라메트릭 서치: "X 이상이면 조건 만족" → 최소 X 찾기
+
+```python
+# BOJ 2805 나무 자르기, 2110 공유기 설치 등
+def parametric(lo, hi):
+    while lo < hi:                  # lo == hi가 되면 답
+        mid = (lo + hi) // 2        # 중간값으로 시도
+        if check(mid):              # 이 값으로 조건 만족하면
+            hi = mid                # 더 작은 쪽도 가능한지 탐색
+        else:
+            lo = mid + 1            # 불만족 → 더 큰 쪽 탐색
+    return lo                       # lo == hi == 정답
+
+# check 함수 예시 (나무 자르기)
+def check(height):
+    # height로 잘랐을 때 얻는 나무가 M 이상인지
+    total = sum(max(0, t - height) for t in trees)
+    return total >= M
+```
+</Template>

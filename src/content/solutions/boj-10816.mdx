@@ -1,0 +1,48 @@
+---
+id: boj-10816
+problemNumber: 10816
+title: 숫자 카드 2
+url: https://www.acmicpc.net/problem/10816
+topicId: hash
+difficulty: easy
+tags: [해시, Counter, dict]
+timeComplexity: O(N + M)
+spaceComplexity: O(N)
+---
+
+## 문제 요약
+
+상근이가 N개의 숫자 카드를 가지고 있다. M개의 정수가 주어질 때, 각 정수가 상근이의 카드에 몇 장씩 있는지 출력한다.
+
+## 접근
+
+`Counter`로 빈도를 한 번에 계산하면 각 쿼리는 O(1) 조회.
+
+- N의 카드 배열을 `Counter`로 변환
+- M개의 쿼리를 순회하며 `Counter[x]`로 빈도 출력 (없으면 0)
+
+## 풀이 코드
+
+```python
+import sys
+from collections import Counter
+input = sys.stdin.readline
+
+N = int(input())
+cards = list(map(int, input().split()))
+cnt = Counter(cards)
+
+M = int(input())
+queries = list(map(int, input().split()))
+
+# Counter[x]는 키가 없어도 0을 반환
+result = [str(cnt[x]) for x in queries]
+print(' '.join(result))
+```
+
+## 핵심 포인트
+
+- **`Counter`의 `[]` 접근은 KeyError가 안 난다** — 없는 키는 0
+- N=500,000, M=500,000 → list `count()`나 `in arr`는 절대 X (O(N·M)으로 시간초과)
+- 출력은 `' '.join`으로 한 번에 → print 반복 금지
+- 같은 패턴: BOJ 11652 카드 (가장 많이 등장한 수 찾기)

@@ -1,0 +1,65 @@
+---
+id: boj-1916
+problemNumber: 1916
+title: 최소비용 구하기
+url: https://www.acmicpc.net/problem/1916
+topicId: dijkstra
+difficulty: hard
+tags: [다익스트라, 최단 경로, 우선순위 큐]
+timeComplexity: O((N + M) log N)
+spaceComplexity: O(N + M)
+---
+
+## 문제 요약
+
+N개 도시, M개 버스(간선, 가중치)가 있다. 출발 도시에서 도착 도시까지 가는 데 드는 **최소 비용**을 구한다.
+
+## 접근
+
+**가중치 있는 단일 출발점 최단 경로** → 다익스트라.
+
+- `dist[u]`를 무한대로 초기화, 시작점만 0
+- 우선순위 큐 `(거리, 노드)`를 사용
+- pop한 거리가 dist보다 크면 이미 처리됨 → 스킵 (시간초과 방지의 핵심)
+- 이웃의 dist를 갱신할 수 있으면 갱신 + 큐에 push
+
+## 풀이 코드
+
+```python
+import sys
+import heapq
+input = sys.stdin.readline
+INF = float('inf')
+
+N = int(input())
+M = int(input())
+adj = [[] for _ in range(N + 1)]
+for _ in range(M):
+    u, v, w = map(int, input().split())
+    adj[u].append((v, w))      # 단방향
+
+start, end = map(int, input().split())
+
+dist = [INF] * (N + 1)
+dist[start] = 0
+pq = [(0, start)]               # (거리, 노드)
+
+while pq:
+    d, u = heapq.heappop(pq)
+    if d != dist[u]:
+        continue                # 이미 더 짧은 경로 발견됨
+    for v, w in adj[u]:
+        nd = d + w
+        if nd < dist[v]:
+            dist[v] = nd
+            heapq.heappush(pq, (nd, v))
+
+print(dist[end])
+```
+
+## 핵심 포인트
+
+- **`if d != dist[u]: continue`** — 이게 없으면 같은 노드를 여러 번 처리해서 시간초과 가능 (큐에 stale 항목이 쌓임)
+- **adj 튜플 순서: (노드, 가중치)** vs **pq 튜플 순서: (거리, 노드)** — 헷갈리지 말 것. pq는 첫 원소 기준 정렬이라 거리가 앞
+- **단방향 그래프**: 문제 조건. 양방향이면 `adj[v].append((u, w))`도 추가
+- 음수 간선이 있으면 다익스트라 X → 벨만-포드/SPFA 사용

@@ -1,0 +1,66 @@
+---
+id: boj-11404
+problemNumber: 11404
+title: 플로이드
+url: https://www.acmicpc.net/problem/11404
+topicId: floyd
+difficulty: hard
+tags: [플로이드-워셜, 모든 쌍 최단 거리, DP]
+timeComplexity: O(N³)
+spaceComplexity: O(N²)
+---
+
+## 문제 요약
+
+n개 도시, m개 버스(가중치 단방향). **모든 도시 쌍** (a, b)에 대한 최소 비용을 구한다. 갈 수 없으면 0.
+
+## 접근
+
+**플로이드-워셜**: `dist[i][j]`를 i→j 최단 거리로 두고, 경유지 k를 0부터 n-1까지 늘려가며 갱신.
+
+- 핵심 점화식: `dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])`
+- **k가 가장 바깥 루프**여야 "k까지 경유지로 고려한 최단 거리"가 단계적으로 확장됨
+- 자기 자신은 0, 그 외는 INF로 초기화
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+INF = float('inf')
+
+n = int(input())
+m = int(input())
+
+dist = [[INF] * (n + 1) for _ in range(n + 1)]
+for i in range(1, n + 1):
+    dist[i][i] = 0
+
+for _ in range(m):
+    a, b, c = map(int, input().split())
+    if c < dist[a][b]:
+        dist[a][b] = c                  # 중복 간선 중 최소만
+
+# 핵심: k가 가장 바깥
+for k in range(1, n + 1):
+    for i in range(1, n + 1):
+        for j in range(1, n + 1):
+            if dist[i][k] + dist[k][j] < dist[i][j]:
+                dist[i][j] = dist[i][k] + dist[k][j]
+
+out = []
+for i in range(1, n + 1):
+    row = []
+    for j in range(1, n + 1):
+        v = dist[i][j]
+        row.append('0' if v == INF else str(v))
+    out.append(' '.join(row))
+sys.stdout.write('\n'.join(out) + '\n')
+```
+
+## 핵심 포인트
+
+- **k가 바깥**인 이유: "0~k번 노드를 경유지로 사용한 최단 거리"를 단계적으로 확장하는 DP. k를 안쪽에 두면 상태가 꼬여서 틀린 답
+- **중복 간선**: 같은 (a, b)에 비용 다른 간선이 여러 개 → 최소만 채택
+- **갈 수 없음**: INF를 0으로 변환해서 출력 (문제 조건)
+- N ≤ 100 → O(N³)=10⁶ 안전. N=500 정도면 한계, 그 이상이면 다익스트라 N번

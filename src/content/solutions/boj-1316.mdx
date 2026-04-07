@@ -1,0 +1,59 @@
+---
+id: boj-1316
+problemNumber: 1316
+title: 그룹 단어 체커
+url: https://www.acmicpc.net/problem/1316
+topicId: string
+difficulty: easy
+tags: [문자열, 시뮬레이션]
+timeComplexity: O(N · L)
+spaceComplexity: O(L)
+---
+
+## 문제 요약
+
+N개의 단어가 주어진다. **그룹 단어**란 같은 문자가 연속해서만 나타나는 단어다. 예: `ccazzzzbb`는 그룹 단어이지만 `aba`는 그렇지 않다.
+그룹 단어의 개수를 출력한다.
+
+## 접근
+
+각 단어를 한 글자씩 보면서, **이전에 등장했던 글자가 다시 나타나는데 직전 글자와 다르면 그룹 단어가 아니다**.
+
+- 직전 글자(`prev`)와 지금까지 본 글자 집합(`seen`)을 유지
+- 현재 글자가 `prev`면 연속 등장 → 통과
+- 현재 글자가 `prev`가 아닌데 `seen`에 있으면 → 그룹 아님
+- 그 외에는 `seen`에 추가하고 `prev` 갱신
+
+## 풀이 코드
+
+```python
+import sys
+input = sys.stdin.readline
+
+N = int(input())
+count = 0
+
+for _ in range(N):
+    word = input().strip()
+    seen = set()
+    prev = ''
+    is_group = True
+    for c in word:
+        if c == prev:
+            continue                # 연속 등장은 OK
+        if c in seen:
+            is_group = False        # 한 번 끝난 글자가 다시 등장
+            break
+        seen.add(c)
+        prev = c
+    if is_group:
+        count += 1
+
+print(count)
+```
+
+## 핵심 포인트
+
+- **연속 vs 재등장 구분**: `prev`로 직전 글자만 비교하면 충분
+- **set + 직전 변수** 조합이 핵심 패턴 — 이후 슬라이딩 윈도우에도 유사 패턴이 자주 등장
+- 단어 길이가 짧아 O(N · L)로 충분
