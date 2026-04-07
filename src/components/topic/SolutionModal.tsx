@@ -112,11 +112,11 @@ export function SolutionModal() {
           border: '1px solid var(--border)',
         }}
       >
-        {/* 헤더 */}
+        {/* 헤더: 모달 스크롤에 따라 본문과 함께 이동 (sticky 아님) */}
         <div
-          className="sticky top-0 z-10 flex items-start gap-3 px-6 py-4 border-b backdrop-blur"
+          className="flex items-start gap-3 px-6 py-4 border-b"
           style={{
-            background: 'color-mix(in srgb, var(--card) 95%, transparent)',
+            background: 'var(--card)',
             borderColor: 'var(--border)',
           }}
         >
