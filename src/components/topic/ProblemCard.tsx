@@ -2,7 +2,7 @@
  * 모듈명: ProblemCard
  * 파일 경로: src/components/topic/ProblemCard.tsx
  * 목적: "푼 문제" 탭에서 개별 문제를 아코디언 카드로 표시
- *       펼치면 public/problems/ 안의 standalone HTML을 iframe으로 로드
+ *       시각화(htmlFile)가 있으면 iframe, 없으면 Python 풀이 코드를 표시
  */
 
 import { useState } from 'react';
@@ -70,7 +70,7 @@ export function ProblemCard({ problem, defaultOpen = false }: Props) {
         </span>
       </header>
 
-      {/* 본문: iframe 시각화 */}
+      {/* 본문: 시각화 iframe 또는 코드 블록 */}
       {open && (
         <div className="px-4 pb-4">
           <div
@@ -88,16 +88,30 @@ export function ProblemCard({ problem, defaultOpen = false }: Props) {
               BOJ에서 보기
             </a>
           </div>
-          <iframe
-            src={`${BASE}${problem.htmlFile}`}
-            title={`${problem.title} 시각화 풀이`}
-            className="w-full rounded-xl border-0"
-            style={{
-              height: '85vh',
-              minHeight: '700px',
-              background: '#fff',
-            }}
-          />
+          {problem.htmlFile ? (
+            <iframe
+              src={`${BASE}${problem.htmlFile}`}
+              title={`${problem.title} 시각화 풀이`}
+              className="w-full rounded-xl border-0"
+              style={{
+                height: '85vh',
+                minHeight: '700px',
+                background: '#fff',
+              }}
+            />
+          ) : (
+            <pre
+              className="rounded-xl overflow-auto text-[0.85rem] leading-relaxed"
+              style={{
+                background: '#1e1e2e',
+                color: '#cdd6f4',
+                padding: '1.25rem 1.5rem',
+                maxHeight: '70vh',
+              }}
+            >
+              <code>{problem.code}</code>
+            </pre>
+          )}
         </div>
       )}
     </section>
