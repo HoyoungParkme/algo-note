@@ -93,7 +93,8 @@ export function ProblemCard({ problem, defaultOpen = false }: Props) {
             title={`${problem.title} 시각화 풀이`}
             className="w-full rounded-xl border-0"
             style={{
-              height: '80vh',
+              height: '85vh',
+              minHeight: '700px',
               background: '#fff',
             }}
           />

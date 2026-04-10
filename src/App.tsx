@@ -94,7 +94,11 @@ export default function App() {
 
         <div className="flex-1 min-w-0 flex flex-col">
           <Header />
-          <main className="max-w-3xl w-full mx-auto px-5 py-8">
+          <main
+            className={`w-full mx-auto px-5 py-8 ${
+              activeTab === 'algo' ? 'max-w-3xl' : 'max-w-full'
+            }`}
+          >
             {activeTab === 'algo' ? (
               <>
                 {visibleTopics.length === 0 ? (
