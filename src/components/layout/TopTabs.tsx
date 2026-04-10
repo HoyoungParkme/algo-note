@@ -9,7 +9,7 @@ import type { Tab } from '@/store/useStore';
 
 const TABS: { key: Tab; label: string; emoji: string }[] = [
   { key: 'algo', label: '알고리즘', emoji: '📚' },
-  { key: 'skill', label: '실전 스킬', emoji: '🧠' },
+  { key: 'skill', label: '푼 문제', emoji: '📝' },
 ];
 
 export function TopTabs() {

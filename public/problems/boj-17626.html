@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>동적 계획법(DP): 제곱수의 합 - 백준 17626</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "import sys",
+      "input = sys.stdin.readline",
+      "",
+      "# N: 만들고자 하는 수",
+      "N = int(input())",
+      "",
+      "# dp[i]: 숫자 i를 만드는 최소 제곱수 개수",
+      "# 라그랑주 정리에 의해 최대 4개이므로 4로 초기화",
+      "dp = [0] + [4] * N",
+      "",
+      "for i in range(1, N + 1):",
+      "    # 1. i 자체가 제곱수인 경우 (예: 1, 4, 9...)",
+      "    if (i ** 0.5).is_integer():",
+      "        dp[i] = 1",
+      "        continue",
+      "",
+      "    # 2. 제곱수가 아닌 경우, 과거의 최적해 재사용",
+      "    # j*j 라는 제곱수 블록 하나를 사용했을 때 남는 공간(i - j*j)의 최적해를 더함",
+      "    for j in range(1, int(i**0.5)+1):",
+      "        dp[i] = min(dp[i], 1 + dp[i - j*j])",
+      "",
+      "print(dp[N])"
+    ];
+
+    const INITIAL_N = 6;
+
+    const generateSimulationSteps = (N) => {
+      const steps = [];
+      const dp = Array(N + 1).fill(4);
+      dp[0] = 0;
+
+      steps.push({
+        codeLine: 8,
+        desc: `초기화: 0부터 ${N}까지의 dp 배열을 생성합니다. 최대 4개로 모든 수를 표현할 수 있으므로, 초기값을 4로 설정합니다 (dp[0]은 0).`,
+        dp: [...dp],
+        currentI: null,
+        currentJ: null,
+        targetIdx: null,
+        calcValue: null
+      });
+
+      for (let i = 1; i <= N; i++) {
+        steps.push({
+          codeLine: 10,
+          desc: `숫자 i = ${i} 를 만드는 최소 제곱수 개수를 탐색합니다.`,
+          dp: [...dp],
+          currentI: i,
+          currentJ: null,
+          targetIdx: null,
+          calcValue: null
+        });
+
+        if (Number.isInteger(Math.sqrt(i))) {
+          steps.push({
+            codeLine: 12,
+            desc: `숫자 ${i}는 그 자체로 완전한 제곱수입니다 (${Math.sqrt(i)}²).`,
+            dp: [...dp],
+            currentI: i,
+            currentJ: null,
+            targetIdx: null,
+            calcValue: null
+          });
+          dp[i] = 1;
+          steps.push({
+            codeLine: 13,
+            desc: `자기 자신 1개로 완성되므로 dp[${i}] = 1 을 저장하고 다음 숫자로 넘어갑니다.`,
+            dp: [...dp],
+            currentI: i,
+            currentJ: null,
+            targetIdx: null,
+            calcValue: null
+          });
+          continue;
+        }
+
+        steps.push({
+          codeLine: 18,
+          desc: `숫자 ${i}는 제곱수가 아닙니다. ${i}보다 작은 제곱수 블록(j²)을 하나 배치해보고, 남은 공간의 최적해를 찾아 비교합니다.`,
+          dp: [...dp],
+          currentI: i,
+          currentJ: null,
+          targetIdx: null,
+          calcValue: null
+        });
+
+        const maxJ = Math.floor(Math.sqrt(i));
+        for (let j = 1; j <= maxJ; j++) {
+          const sq = j * j;
+          const prevIdx = i - sq;
+          const calcVal = 1 + dp[prevIdx];
+
+          steps.push({
+            codeLine: 19,
+            desc: `j = ${j} 일 때 (제곱수 ${sq} 블록 사용): 남은 공간은 ${prevIdx} 입니다. 과거의 해답인 dp[${prevIdx}](${dp[prevIdx]}) 에 현재 블록 1개를 더해 ${calcVal} 이 산출됩니다.`,
+            dp: [...dp],
+            currentI: i,
+            currentJ: j,
+            targetIdx: prevIdx,
+            calcValue: calcVal
+          });
+
+          if (calcVal < dp[i]) {
+            dp[i] = calcVal;
+            steps.push({
+              codeLine: 19,
+              desc: `${calcVal} 은 기존 dp[${i}](${dp[i] === calcVal ? calcVal + ' -> 갱신 직후' : '이전 값'}) 보다 작거나 같으므로, 최소값인 ${calcVal} 로 갱신합니다.`,
+              dp: [...dp],
+              currentI: i,
+              currentJ: j,
+              targetIdx: prevIdx,
+              calcValue: calcVal
+            });
+          } else {
+            steps.push({
+              codeLine: 19,
+              desc: `산출된 ${calcVal} 은 기존 dp[${i}](${dp[i]}) 보다 크므로 무시합니다. (더 나은 방법이 이미 존재함)`,
+              dp: [...dp],
+              currentI: i,
+              currentJ: j,
+              targetIdx: prevIdx,
+              calcValue: calcVal
+            });
+          }
+        }
+      }
+
+      steps.push({
+        codeLine: 21,
+        desc: `모든 탐색이 완료되었습니다. ${N}을 만드는 최소 제곱수의 개수는 dp[${N}] = ${dp[N]} 개 입니다.`,
+        dp: [...dp],
+        currentI: null,
+        currentJ: null,
+        targetIdx: null,
+        calcValue: null
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps(INITIAL_N);
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line;
+      let commentPart = '';
+
+      if (commentIdx !== -1) {
+        codePart = line.slice(0, commentIdx);
+        commentPart = line.slice(commentIdx);
+      }
+
+      if (!codePart.trim() && commentPart) {
+        return <span className="text-slate-500 italic">{commentPart}</span>;
+      }
+
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*\*|\*|\.)/g);
+
+      const keywords = new Set(['for', 'in', 'if', 'continue', 'import']);
+      const builtins = new Set(['int', 'input', 'range', 'min', 'print']);
+      const methods = new Set(['readline', 'is_integer']);
+      const modules = new Set(['sys']);
+
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (methods.has(token)) return <span key={i} className="text-yellow-200">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=', '+', '-', '<', '>', '==', '!=', '*', '**'].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+
+      return (
+        <>
+          {highlightedTokens}
+          {commentPart && <span className="text-slate-500 italic">{commentPart}</span>}
+        </>
+      );
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) {
+          setCurrentStepIdx(prev => prev + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      }, [currentStepIdx]);
+
+      const handlePrev = () => {
+        if (currentStepIdx > 0) {
+          setCurrentStepIdx(prev => prev - 1);
+          setIsPlaying(false);
+        }
+      };
+
+      const handleReset = () => {
+        setCurrentStepIdx(0);
+        setIsPlaying(false);
+      };
+
+      const togglePlay = () => {
+        if (isEnd) handleReset();
+        setIsPlaying(!isPlaying);
+      };
+
+      useEffect(() => {
+        if (isPlaying) {
+          playIntervalRef.current = setInterval(handleNext, 1500);
+        } else {
+          clearInterval(playIntervalRef.current);
+        }
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      // 활성 코드 라인으로 자동 스크롤
+      useEffect(() => {
+        if (codeViewerRef.current && stepData.codeLine !== null) {
+          const activeEl = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (activeEl) {
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, [currentStepIdx]);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">동적 계획법(DP): 제곱수의 합 최소 개수 구하기</h1>
+              <p className="text-slate-600">
+                주어진 숫자에서 <b>가장 큰 제곱수 블록</b>을 먼저 덜어내면, 남은 공간을 채우는 최적해는 이미 과거 배열 앞쪽에 저장되어 있습니다.
+                이를 통해 <code className="bg-slate-100 px-1 rounded text-sm text-pink-600">현재 상태 = 1(현재 블록) + 과거의 최적해</code> 라는 점화식을 성립시킵니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700 flex flex-col justify-center min-h-[90px]">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+
+              <div className="flex flex-col space-y-6">
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-lg font-semibold text-slate-800">DP 배열 상태 추적</h2>
+                    <div className="flex space-x-3 text-xs text-slate-500">
+                      <div className="flex items-center"><span className="w-3 h-3 bg-blue-500 rounded-sm mr-1"></span> 현재 i (타겟)</div>
+                      <div className="flex items-center"><span className="w-3 h-3 bg-orange-500 rounded-sm mr-1"></span> 과거 참조 (i - j²)</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center space-x-2 mb-6">
+                    {stepData.dp.map((val, idx) => {
+                      const isCurrentTarget = stepData.currentI === idx;
+                      const isReference = stepData.targetIdx === idx;
+
+                      let boxClass = "w-12 h-12 flex items-center justify-center text-lg font-bold rounded-lg border-2 ";
+
+                      if (isCurrentTarget) {
+                        boxClass += "bg-blue-500 border-blue-700 text-white scale-110 shadow-lg z-10";
+                      } else if (isReference) {
+                        boxClass += "bg-orange-500 border-orange-700 text-white scale-110 shadow-lg z-10";
+                      } else if (idx < (stepData.currentI || 0)) {
+                        boxClass += "bg-emerald-50 border-emerald-200 text-emerald-700";
+                      } else {
+                        boxClass += "bg-slate-100 border-slate-200 text-slate-400";
+                      }
+
+                      return (
+                        <div key={idx} className="flex flex-col items-center">
+                          <div className="text-xs text-slate-500 font-mono mb-1">dp[{idx}]</div>
+                          <div className={boxClass} style={{ transition: 'all 0.3s' }}>{val}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex-1 flex flex-col justify-center space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">현재 채워야 할 수 <code className="bg-slate-200 px-1 rounded">i</code></span>
+                      <span className="font-bold text-blue-600 text-lg">{stepData.currentI !== null ? stepData.currentI : '-'}</span>
+                    </div>
+
+                    {stepData.currentJ !== null && (
+                      <div className="flex justify-between text-sm border-t border-slate-200 pt-2 mt-2">
+                        <span className="text-slate-600">사용한 제곱수 블록 <code className="bg-slate-200 px-1 rounded">j*j</code></span>
+                        <span className="font-bold text-slate-700">{stepData.currentJ}² = {stepData.currentJ * stepData.currentJ}</span>
+                      </div>
+                    )}
+
+                    {stepData.targetIdx !== null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">남은 공간 (과거 참조) <code className="bg-slate-200 px-1 rounded">i - j*j</code></span>
+                        <span className="font-bold text-orange-600">dp[{stepData.targetIdx}] = {stepData.dp[stepData.targetIdx]}</span>
+                      </div>
+                    )}
+
+                    <hr className="border-slate-200" />
+                    <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-md shadow-sm">
+                      <span className="font-semibold text-sm">현재 최적해 갱신 <code className="bg-slate-700 px-1 text-xs rounded">min(dp[i], 1 + dp과거)</code></span>
+                      <span className="text-xl font-bold text-emerald-400">
+                        {stepData.currentI !== null ? stepData.dp[stepData.currentI] : '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">
+                      {isPlaying ? (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> 일시정지</>
+                      ) : (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg> 자동 재생</>
+                      )}
+                    </button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">
+                    진행도: {currentStepIdx + 1} / {STEPS.length}
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div
+                          key={idx}
+                          data-active={isActive ? 'true' : 'false'}
+                          className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}
+                        >
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -19,8 +19,10 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileDrawer } from '@/components/layout/MobileDrawer';
 import { SearchPalette } from '@/components/layout/SearchPalette';
 import { TopicCard } from '@/components/topic/TopicCard';
+import { ProblemCard } from '@/components/topic/ProblemCard';
 import { SolutionModal } from '@/components/topic/SolutionModal';
 import { PatternGrid } from '@/components/cheatsheet/PatternGrid';
+import { PROBLEMS } from '@/content/problems';
 import { useStore } from '@/store/useStore';
 import type { Filters } from '@/store/useStore';
 import { useShortcut } from '@/hooks/useShortcut';
@@ -84,7 +86,7 @@ export default function App() {
         <MobileDrawer>
           <Sidebar
             algoTopics={algoTopics}
-            skillTopics={skillTopics}
+            skillTopics={[]}
             onSearchClick={() => setSearchOpen(true)}
             onItemClick={() => setDrawerOpen(false)}
           />
@@ -93,30 +95,43 @@ export default function App() {
         <div className="flex-1 min-w-0 flex flex-col">
           <Header />
           <main className="max-w-3xl w-full mx-auto px-5 py-8">
-            {visibleTopics.length === 0 ? (
-              <p
-                className="text-center py-16 text-[0.92rem]"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                필터 조건에 맞는 토픽이 없습니다.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {visibleTopics.map((t, i) => (
-                  <div
-                    key={t.id}
-                    style={{
-                      animationDelay: `${Math.min(i, 12) * 0.03}s`,
-                    }}
+            {activeTab === 'algo' ? (
+              <>
+                {visibleTopics.length === 0 ? (
+                  <p
+                    className="text-center py-16 text-[0.92rem]"
+                    style={{ color: 'var(--text-muted)' }}
                   >
-                    <TopicCard topic={t} defaultOpen={i === 0} />
+                    필터 조건에 맞는 토픽이 없습니다.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    {visibleTopics.map((t, i) => (
+                      <div
+                        key={t.id}
+                        style={{
+                          animationDelay: `${Math.min(i, 12) * 0.03}s`,
+                        }}
+                      >
+                        <TopicCard topic={t} defaultOpen={i === 0} />
+                      </div>
+                    ))}
                   </div>
+                )}
+                <PatternGrid />
+              </>
+            ) : (
+              /* 푼 문제 탭 */
+              <div className="flex flex-col gap-5">
+                {PROBLEMS.map((p, i) => (
+                  <ProblemCard
+                    key={p.id}
+                    problem={p}
+                    defaultOpen={i === 0}
+                  />
                 ))}
               </div>
             )}
-
-            {/* 알고리즘 탭에서만 패턴 매핑 표시 */}
-            {activeTab === 'algo' && <PatternGrid />}
 
             <footer
               className="text-center pt-12 mt-12 text-[0.82rem]"
@@ -128,7 +143,7 @@ export default function App() {
               호영의 알고리즘 스터디 노트 ·{' '}
               {activeTab === 'algo'
                 ? `${algoTopics.length}개 알고리즘`
-                : `${skillTopics.length}개 실전 스킬`}
+                : `${PROBLEMS.length}개 문제 풀이`}
             </footer>
           </main>
         </div>
