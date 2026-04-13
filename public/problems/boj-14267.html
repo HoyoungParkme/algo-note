@@ -58,7 +58,7 @@
 
     // build children
     const CHILDREN = Array.from({length: N+1}, () => []);
-    for (let i = 2; i <= N; i++) CHILDREN[PARENT[i-2]].push(i);
+    for (let i = 2; i <= N; i++) CHILDREN[PARENT[i-1]].push(i);
 
     const NODE_POS = [
       null,
@@ -179,7 +179,7 @@
       }, [currentStepIdx]);
 
       const EDGES_TREE = [];
-      for (let i = 2; i <= N; i++) EDGES_TREE.push([PARENT[i-2], i]);
+      for (let i = 2; i <= N; i++) EDGES_TREE.push([PARENT[i-1], i]);
 
       const getNodeStyle = (i) => {
         if (stepData.current === i) return { fill: '#2563eb', stroke: '#93c5fd', text: 'white' };
