@@ -20,21 +20,29 @@
     const { useState, useEffect, useRef, useCallback } = React;
 
     const PYTHON_CODE = [
-      "import sys",
-      "input = sys.stdin.read",
-      "data = input().split()",
-      "N = int(data[0])",
-      "scores = [0] * 301",
+      "N = int(input())",
+      "S = [0] * N",
       "for i in range(N):",
-      "    scores[i+1] = int(data[i+1])",
+      "     S[i] = int(input())",
       "",
-      "dp = [0] * 301",
-      "dp[1] = scores[1]",
-      "dp[2] = scores[1] + scores[2]",
-      "dp[3] = max(scores[1] + scores[3], scores[2] + scores[3])",
-      "for i in range(4, N + 1):",
-      "    dp[i] = max(dp[i - 3] + scores[i - 1] + scores[i], dp[i - 2] + scores[i])",
-      "print(dp[N])"
+      "A = [0] * N",
+      "B = [0] * N",
+      "",
+      "A[0] = S[0]",
+      "B[0] = S[0]",
+      "",
+      "for i in range(1,N):",
+      "    if i >= 2:",
+      "        A[i] = S[i] + max(A[i-2], B[i-2])",
+      "    else:",
+      "        A[i] = S[i]",
+      "",
+      "    if i >= 3:",
+      "        B[i] = S[i] + S[i - 1] + max(A[i-3], B[i-3])",
+      "    else:",
+      "        B[i] = S[i] + S[i-1]",
+      "",
+      "print(max(A[N-1],B[N-1]))"
     ];
 
     const generateSimulationSteps = () => {
@@ -53,7 +61,7 @@
 
       dp[1] = scores[1];
       steps.push({
-        codeLine: 9,
+        codeLine: 8,
         desc: `첫 번째 계단을 밟는 최대 점수: dp[1] = scores[1] = ${scores[1]}`,
         dp: [...dp],
         scores,
@@ -62,7 +70,7 @@
 
       dp[2] = scores[1] + scores[2];
       steps.push({
-        codeLine: 10,
+        codeLine: 11,
         desc: `두 번째 계단을 밟는 최대 점수: 두 계단을 연속해서 밟는 것이 점수가 가장 높습니다. dp[2] = ${scores[1]} + ${scores[2]} = ${dp[2]}`,
         dp: [...dp],
         scores,
@@ -81,7 +89,7 @@
 
       for (let i = 4; i <= N; i++) {
         steps.push({
-          codeLine: 12,
+          codeLine: 11,
           desc: `현재 계속 i = ${i}에 대해 최댓값을 계산합니다. 연속된 3개의 계단을 밟을 수 없습니다.`,
           dp: [...dp],
           scores,
@@ -94,7 +102,7 @@
         dp[i] = Math.max(case1, case2);
         
         steps.push({
-          codeLine: 13,
+          codeLine: 11,
           desc: `마지막 위치 i=${i} 도달법 2가지 비교:
           (1) i-3을 밟고 i-1을 거쳐 i로 온 경우 (${dp[i-3]}+${scores[i-1]}+${scores[i]} = ${case1})
           (2) i-2를 밟고 바로 i로 온 경우 (${dp[i-2]}+${scores[i]} = ${case2})
@@ -107,7 +115,7 @@
       }
 
       steps.push({
-        codeLine: 14,
+        codeLine: 23,
         desc: `계산 완료! 꼭대기 계단에 도달할 수 있는 최대 점수는 ${dp[N]}점 입니다.`,
         dp: [...dp],
         scores,

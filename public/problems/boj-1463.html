@@ -21,14 +21,22 @@
 
     const PYTHON_CODE = [
       "N = int(input())",
-      "dp = [0] * (N + 1)",
-      "for i in range(2, N + 1):",
-      "    dp[i] = dp[i - 1] + 1",
+      "",
+      "a = [0] * (N + 1)",
+      "a[0] = 1",
+      "",
+      "for i in range(2, N+1):",
+      "    # 1을 뺀거 -> 1빼면 이전에 걸로 돌아가는거니깐 -> ex) a[2] - 1 = a[1]",
+      "    # +1을 해주는건 몇번 했는지 체크하는데 돌아간거 한번 체크",
+      "    a[i] = a[i - 1] + 1",
+      "",
+      "    if i % 3 ==0:",
+      "        a[i] = min(a[i], a[i//3] + 1)",
+      "",
       "    if i % 2 == 0:",
-      "        dp[i] = min(dp[i], dp[i // 2] + 1)",
-      "    if i % 3 == 0:",
-      "        dp[i] = min(dp[i], dp[i // 3] + 1)",
-      "print(dp[N])"
+      "        a[i] = min(a[i], a[i//2] + 1)",
+      "",
+      "print(a[N])"
     ];
 
     const generateSimulationSteps = () => {
@@ -37,7 +45,7 @@
       const dp = new Array(N + 1).fill(0);
 
       steps.push({
-        codeLine: 1,
+        codeLine: 2,
         desc: `N=${N}. dp 배열을 0으로 초기화합니다. dp[1]은 1을 1로 만드는 연산 횟수가 0이므로 0입니다.`,
         dp: [...dp],
         currentI: null,
@@ -45,7 +53,7 @@
 
       for (let i = 2; i <= N; i++) {
         steps.push({
-          codeLine: 2,
+          codeLine: 5,
           desc: `현재 값 i = ${i}에 대해 최소 연산 횟수를 구합니다.`,
           dp: [...dp],
           currentI: i,
@@ -53,7 +61,7 @@
 
         dp[i] = dp[i - 1] + 1;
         steps.push({
-          codeLine: 3,
+          codeLine: 8,
           desc: `(1) 먼저 값을 1 빼는 경우를 계산합니다. dp[${i}] = dp[${i-1}] + 1 = ${dp[i-1]} + 1 = ${dp[i]}`,
           dp: [...dp],
           currentI: i,
@@ -62,7 +70,7 @@
 
         if (i % 2 === 0) {
           steps.push({
-            codeLine: 4,
+            codeLine: 13,
             desc: `(2) ${i}는 2로 나누어 떨어집니다.`,
             dp: [...dp],
             currentI: i,
@@ -71,7 +79,7 @@
           if (candidate < dp[i]) {
             dp[i] = candidate;
             steps.push({
-              codeLine: 5,
+              codeLine: 14,
               desc: `2로 나누는 것이 더 유리합니다! dp[${i}] = dp[${i/2}] + 1 = ${candidate} (갱신)`,
               dp: [...dp],
               currentI: i,
@@ -79,7 +87,7 @@
             });
           } else {
             steps.push({
-              codeLine: 5,
+              codeLine: 14,
               desc: `2로 나누는 경우(dp[${i/2}]+1 = ${candidate})가 현재 값(${dp[i]})보다 크거나 같으므로 갱신하지 않습니다.`,
               dp: [...dp],
               currentI: i,
@@ -90,7 +98,7 @@
 
         if (i % 3 === 0) {
           steps.push({
-            codeLine: 6,
+            codeLine: 10,
             desc: `(3) ${i}는 3으로 나누어 떨어집니다.`,
             dp: [...dp],
             currentI: i,
@@ -99,7 +107,7 @@
           if (candidate < dp[i]) {
             dp[i] = candidate;
             steps.push({
-              codeLine: 7,
+              codeLine: 11,
               desc: `3으로 나누는 것이 더 유리합니다! dp[${i}] = dp[${i/3}] + 1 = ${candidate} (갱신)`,
               dp: [...dp],
               currentI: i,
@@ -107,7 +115,7 @@
             });
           } else {
             steps.push({
-              codeLine: 7,
+              codeLine: 11,
               desc: `3으로 나누는 경우(dp[${i/3}]+1 = ${candidate})가 현재 값(${dp[i]})보다 크거나 같으므로 갱신하지 않습니다.`,
               dp: [...dp],
               currentI: i,
@@ -118,7 +126,7 @@
       }
 
       steps.push({
-        codeLine: 8,
+        codeLine: 16,
         desc: `모든 계산이 완료되었습니다. dp[${N}] = ${dp[N]} 이 최솟값입니다!`,
         dp: [...dp],
         currentI: N,

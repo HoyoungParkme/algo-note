@@ -212,11 +212,11 @@
                 </div>
 
                 {/* 결과 배열 */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                  <h2 className="text-lg font-semibold text-slate-800 mb-4">결과 배열 s[] (a~z 첫 등장 위치)</h2>
-                  <div className="grid grid-cols-13 gap-1">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4 whitespace-nowrap">결과 배열 s[] (a~z 첫 등장 위치)</h2>
+                  <div className="flex gap-2 min-w-max pb-2">
                     {stepData.result.map((val, idx) => (
-                      <div key={idx} className={`flex flex-col items-center justify-center rounded-lg border p-1 transition-all ${
+                      <div key={idx} className={`w-10 flex flex-shrink-0 flex-col items-center justify-center rounded-lg border p-1 transition-all ${
                         stepData.highlightAlpha === idx
                           ? 'bg-orange-400 text-white border-orange-500 scale-110 shadow-md'
                           : val !== -1

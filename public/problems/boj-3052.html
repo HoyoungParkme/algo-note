@@ -121,7 +121,7 @@
                 {/* 입력 → 나머지 변환 */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                   <h2 className="text-lg font-semibold text-slate-800 mb-4">입력값 → 나머지 (% 42)</h2>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                     {INPUTS.map((val, idx) => {
                       const isCurrent = stepData.inputIdx === idx;
                       const isDone = stepData.inputIdx !== null && idx < stepData.inputIdx;
