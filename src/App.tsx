@@ -28,29 +28,6 @@ import type { Filters } from '@/store/useStore';
 import { useShortcut } from '@/hooks/useShortcut';
 import type { Topic } from '@/lib/types';
 
-// ─── 푼 문제 탭용 상수 ───────────────────────────────────────────
-/** problems.ts에 등장하는 고유 카테고리 목록 (순서 유지) */
-const ALL_CATEGORIES = ['전체', ...Array.from(new Set(PROBLEMS.map((p) => p.category)))];
-
-/** difficulty 문자열에서 티어명 추출 ("Gold III" → "Gold") */
-function tierOf(difficulty: string): string {
-  return difficulty.split(' ')[0];
-}
-
-/** 고유 티어 목록 (Bronze → Silver → Gold → Platinum 순) */
-const TIER_ORDER = ['Bronze', 'Silver', 'Gold', 'Platinum'];
-const ALL_TIERS = ['전체', ...TIER_ORDER.filter((t) =>
-  PROBLEMS.some((p) => tierOf(p.difficulty) === t)
-)];
-
-/** 난이도 티어별 배지 색상 */
-const TIER_STYLE: Record<string, { bg: string; text: string }> = {
-  Bronze:   { bg: 'rgba(180,115,60,0.15)',  text: '#b47340' },
-  Silver:   { bg: 'rgba(140,150,175,0.18)', text: '#8c96af' },
-  Gold:     { bg: 'rgba(220,170,30,0.18)',  text: '#c8a020' },
-  Platinum: { bg: 'rgba(0,190,170,0.15)',   text: '#00beaa' },
-};
-
 // 빌드 타임 import 결과만 사용하는 순수 함수이므로 모듈 평가 시점에 한 번만 호출
 const algoTopics = loadAlgorithms();
 const skillTopics = loadSkills();
@@ -78,21 +55,9 @@ export default function App() {
   const filters = useStore((s) => s.filters);
   const hidden = useStore((s) => s.hidden);
   const setDrawerOpen = useStore((s) => s.setDrawerOpen);
+  const selectedProblemId = useStore((s) => s.selectedProblemId);
 
   const [searchOpen, setSearchOpen] = useState(false);
-
-  // ─── 푼 문제 탭 로컬 필터 상태 ──────────────────────────────────
-  const [selCategory, setSelCategory] = useState('전체');
-  const [selTier, setSelTier] = useState('전체');
-
-  /** 선택한 카테고리 + 티어로 문제 목록 필터링 */
-  const filteredProblems = useMemo(() => {
-    return PROBLEMS.filter((p) => {
-      if (selCategory !== '전체' && p.category !== selCategory) return false;
-      if (selTier !== '전체' && tierOf(p.difficulty) !== selTier) return false;
-      return true;
-    });
-  }, [selCategory, selTier]);
 
   // theme → <html> 클래스 동기화
   useEffect(() => {
@@ -129,8 +94,8 @@ export default function App() {
         <div className="flex-1 min-w-0 flex flex-col">
           <Header />
           <main
-            className={`w-full mx-auto px-5 py-8 ${
-              activeTab === 'algo' ? 'max-w-3xl' : 'max-w-4xl'
+            className={`w-full mx-auto px-5 py-8 transition-all ${
+              activeTab === 'algo' ? 'max-w-3xl' : 'max-w-[1600px]'
             }`}
           >
             {activeTab === 'algo' ? (
@@ -159,133 +124,29 @@ export default function App() {
                 <PatternGrid />
               </>
             ) : (
-              /* ── 푼 문제 탭 ── */
+              /* ── 푼 문제 탭 (단일 문제 표시 모드) ── */
               <div className="flex flex-col gap-4">
-
-                {/* ── 필터 바 ── */}
-                <div
-                  className="rounded-2xl px-5 py-4 flex flex-col gap-4 sticky top-0 z-10"
-                  style={{
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    boxShadow: '0 2px 12px rgba(0,0,0,.14)',
-                    backdropFilter: 'blur(12px)',
-                  }}
-                >
-                  {/* 카테고리 필터 */}
-                  <div>
-                    <p
-                      className="text-[0.68rem] font-bold tracking-widest uppercase mb-2"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      알고리즘 분류
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ALL_CATEGORIES.map((cat) => {
-                        const active = selCategory === cat;
-                        return (
-                          <button
-                            key={cat}
-                            onClick={() => setSelCategory(cat)}
-                            className="px-3 py-1 rounded-lg text-[0.78rem] transition-all cursor-pointer"
-                            style={{
-                              background: active ? 'var(--accent)' : 'var(--bg)',
-                              color: active ? '#fff' : 'var(--text-muted)',
-                              border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                              fontWeight: active ? 700 : 400,
-                            }}
-                          >
-                            {cat}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* 난이도(티어) 필터 + 결과 카운트 */}
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p
-                        className="text-[0.68rem] font-bold tracking-widest uppercase shrink-0"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        난이도
-                      </p>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {ALL_TIERS.map((tier) => {
-                          const active = selTier === tier;
-                          const style = tier !== '전체' ? TIER_STYLE[tier] : null;
-                          return (
-                            <button
-                              key={tier}
-                              onClick={() => setSelTier(tier)}
-                              className="px-3 py-1 rounded-lg text-[0.78rem] transition-all cursor-pointer"
-                              style={{
-                                background: active
-                                  ? (style?.bg ?? 'rgba(167,139,250,0.2)')
-                                  : 'var(--bg)',
-                                color: active
-                                  ? (style?.text ?? 'var(--accent)')
-                                  : 'var(--text-muted)',
-                                border: `1px solid ${
-                                  active
-                                    ? (style?.text ?? 'var(--accent)')
-                                    : 'var(--border)'
-                                }`,
-                                fontWeight: active ? 700 : 400,
-                              }}
-                            >
-                              {tier}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>
-                        <span className="font-bold" style={{ color: 'var(--text)' }}>
-                          {filteredProblems.length}
-                        </span>
-                        /{PROBLEMS.length}개
-                      </span>
-                      {(selCategory !== '전체' || selTier !== '전체') && (
-                        <button
-                          onClick={() => {
-                            setSelCategory('전체');
-                            setSelTier('전체');
-                          }}
-                          className="text-[0.72rem] px-2 py-0.5 rounded cursor-pointer transition-all"
-                          style={{
-                            color: 'var(--accent)',
-                            background: 'rgba(167,139,250,0.1)',
-                            border: '1px solid rgba(167,139,250,0.3)',
-                          }}
-                        >
-                          초기화
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── 문제 카드 목록 ── */}
-                {filteredProblems.length === 0 ? (
-                  <p
-                    className="text-center py-16 text-[0.92rem]"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    해당 조건에 맞는 문제가 없습니다.
-                  </p>
+                {selectedProblemId ? (
+                  <ProblemCard
+                    key={selectedProblemId}
+                    problem={PROBLEMS.find((p) => p.id === selectedProblemId)!}
+                    defaultOpen={true}
+                  />
                 ) : (
-                  <div className="flex flex-col gap-4">
-                    {filteredProblems.map((p, i) => (
-                      <ProblemCard
-                        key={p.id}
-                        problem={p}
-                        defaultOpen={i === 0 && filteredProblems.length === 1}
-                      />
-                    ))}
+                  <div
+                    className="flex flex-col items-center justify-center py-32 rounded-2xl"
+                    style={{
+                      background: 'var(--card)',
+                      border: '1px dashed var(--border)',
+                    }}
+                  >
+                    <span className="text-4xl mb-4">👈</span>
+                    <h3 className="text-[1.1rem] font-bold" style={{ color: 'var(--text)' }}>
+                      문제를 선택해주세요
+                    </h3>
+                    <p className="text-[0.85rem] mt-2" style={{ color: 'var(--text-muted)' }}>
+                      좌측 사이드바에서 알고리즘 분류별 풀이 결과를 선택할 수 있습니다.
+                    </p>
                   </div>
                 )}
               </div>

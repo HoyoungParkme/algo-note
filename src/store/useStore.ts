@@ -40,6 +40,11 @@ interface AppState {
     open: boolean;
     problemId: string | null;
   };
+  /** 푼 문제 탭 필터 (영속화 X) */
+  problemCategory: string; // '전체' or category name
+  problemTier: string;     // '전체' or tier name
+  /** 선택된 풀이 문제 ID */
+  selectedProblemId: string | null;
 
   toggleMaster: (id: string) => void;
   setTheme: (theme: Theme) => void;
@@ -51,6 +56,9 @@ interface AppState {
   setDrawerOpen: (open: boolean) => void;
   openSolution: (problemId: string) => void;
   closeSolution: () => void;
+  setProblemCategory: (cat: string) => void;
+  setProblemTier: (tier: string) => void;
+  setSelectedProblemId: (id: string | null) => void;
 }
 
 const DEFAULT_FILTERS: Filters = {
@@ -88,6 +96,9 @@ export const useStore = create<AppState>()(
       filters: DEFAULT_FILTERS,
       drawerOpen: false,
       solutionModal: { open: false, problemId: null },
+      problemCategory: '전체',
+      problemTier: '전체',
+      selectedProblemId: null,
 
       toggleMaster: (id) =>
         set((s) => ({
@@ -109,6 +120,9 @@ export const useStore = create<AppState>()(
         set({ solutionModal: { open: true, problemId } }),
       closeSolution: () =>
         set({ solutionModal: { open: false, problemId: null } }),
+      setProblemCategory: (problemCategory) => set({ problemCategory }),
+      setProblemTier: (problemTier) => set({ problemTier }),
+      setSelectedProblemId: (selectedProblemId) => set({ selectedProblemId }),
     }),
     {
       name: 'algo-note-store',
