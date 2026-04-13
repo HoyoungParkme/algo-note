@@ -26,6 +26,7 @@ export const PROBLEMS: Problem[] = [
     category: '문자열',
     difficulty: 'Platinum III',
     url: 'https://www.acmicpc.net/problem/3033',
+    htmlFile: 'problems/boj-3033.html',
     description: '문자열, 해싱, 접미사 배열과 LCP 배열, 라빈–카프',
     code: `L = int(input())
 S = input()
@@ -94,6 +95,7 @@ print(answer)`,
     category: '자료 구조',
     difficulty: 'Gold II',
     url: 'https://www.acmicpc.net/problem/1766',
+    htmlFile: 'problems/boj-1766.html',
     description: '자료 구조, 그래프 이론, 우선순위 큐, 방향 비순환 그래프, 위상 정렬',
     code: `from queue import PriorityQueue
 
@@ -133,6 +135,7 @@ for i in range(N):
     category: '그래프 이론',
     difficulty: 'Gold III',
     url: 'https://www.acmicpc.net/problem/1238',
+    htmlFile: 'problems/boj-1238.html',
     description: '그래프 이론, 최단 경로, 데이크스트라',
     code: `from queue import PriorityQueue
 
@@ -188,6 +191,7 @@ print(max_dist)`,
     category: '그래프 이론',
     difficulty: 'Gold III',
     url: 'https://www.acmicpc.net/problem/2252',
+    htmlFile: 'problems/boj-2252.html',
     description: '그래프 이론, 방향 비순환 그래프, 위상 정렬',
     code: `from collections import deque
 
@@ -254,6 +258,7 @@ print(answer)`,
     category: '그래프 이론',
     difficulty: 'Gold IV',
     url: 'https://www.acmicpc.net/problem/1753',
+    htmlFile: 'problems/boj-1753.html',
     description: '그래프 이론, 최단 경로, 데이크스트라',
     code: `# from queue import PriorityQueue
 import heapq
@@ -311,6 +316,7 @@ for i in range(V):
     category: '다이나믹 프로그래밍',
     difficulty: 'Gold IV',
     url: 'https://www.acmicpc.net/problem/14267',
+    htmlFile: 'problems/boj-14267.html',
     description: '다이나믹 프로그래밍, 그래프 이론, 그래프 탐색, 트리, 깊이 우선 탐색, 트리에서의 다이나믹 프로그래밍',
     code: `N, C = map(int, input().split())
 parent = list(map(int, input().split()))
@@ -375,6 +381,7 @@ print(answer)`,
     category: '그래프 이론',
     difficulty: 'Silver I',
     url: 'https://www.acmicpc.net/problem/1389',
+    htmlFile: 'problems/boj-1389.html',
     description: '그래프 이론, 그래프 탐색, 너비 우선 탐색, 최단 경로, 플로이드–워셜',
     code: `import sys
 from collections import deque
@@ -421,6 +428,7 @@ print(min_person)`,
     category: '그래프 이론',
     difficulty: 'Silver I',
     url: 'https://www.acmicpc.net/problem/1743',
+    htmlFile: 'problems/boj-1743.html',
     description: '그래프 이론, 그래프 탐색, 너비 우선 탐색, 깊이 우선 탐색, 격자 그래프, 플러드 필',
     code: `from collections import deque
 
@@ -527,6 +535,7 @@ print(dist[N-1][M-1])`,
     category: '문자열',
     difficulty: 'Silver I',
     url: 'https://www.acmicpc.net/problem/5525',
+    htmlFile: 'problems/boj-5525.html',
     description: '문자열',
     code: `N = int(input()) # 몇 번 반복된 "IOI" 형태를 만들지
 M = int(input()) # 문자열 S의 길이
@@ -605,6 +614,7 @@ print(count)`,
     category: '누적 합',
     difficulty: 'Silver I',
     url: 'https://www.acmicpc.net/problem/21318',
+    htmlFile: 'problems/boj-21318.html',
     description: '누적 합',
     code: `import sys
 input = sys.stdin.readline
@@ -647,6 +657,7 @@ for _ in range(Q):
     category: '브루트포스 알고리즘',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/1182',
+    htmlFile: 'problems/boj-1182.html',
     description: '브루트포스 알고리즘, 백트래킹',
     code: `from itertools import combinations
 
@@ -740,6 +751,7 @@ print(answer)`,
     category: '그래프 이론',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/5567',
+    htmlFile: 'problems/boj-5567.html',
     description: '그래프 이론, 그래프 탐색, 너비 우선 탐색',
     code: `N = int(input())
 M = int(input())
@@ -773,6 +785,7 @@ print(sum(friend) + sum(friend_friend))`,
     category: '브루트포스 알고리즘',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/10819',
+    htmlFile: 'problems/boj-10819.html',
     description: '브루트포스 알고리즘, 백트래킹',
     code: `from itertools import combinations, permutations
 
@@ -797,6 +810,7 @@ print(answer)`,
     category: '그래프 이론',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/11724',
+    htmlFile: 'problems/boj-11724.html',
     description: '그래프 이론, 그래프 탐색, 너비 우선 탐색, 깊이 우선 탐색',
     code: `import sys
 from collections import deque
@@ -838,6 +852,7 @@ print(cnt)`,
     category: '그래프 이론',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/11725',
+    htmlFile: 'problems/boj-11725.html',
     description: '그래프 이론, 그래프 탐색, 트리, 너비 우선 탐색, 깊이 우선 탐색',
     code: `import sys
 sys.setrecursionlimit(10**6)
@@ -1036,6 +1051,7 @@ for i in range(N):
     category: '백트래킹',
     difficulty: 'Silver III',
     url: 'https://www.acmicpc.net/problem/15650',
+    htmlFile: 'problems/boj-15650.html',
     description: '백트래킹',
     code: `from itertools import combinations
 
@@ -1362,6 +1378,7 @@ for i in range(N):
     category: '구현',
     difficulty: 'Silver V',
     url: 'https://www.acmicpc.net/problem/1343',
+    htmlFile: 'problems/boj-1343.html',
     description: '구현, 그리디 알고리즘, 문자열',
     code: `N = input()
 
@@ -1473,6 +1490,7 @@ print(*answer)`,
     category: '브루트포스 알고리즘',
     difficulty: 'Bronze I',
     url: 'https://www.acmicpc.net/problem/2309',
+    htmlFile: 'problems/boj-2309.html',
     description: '브루트포스 알고리즘, 정렬',
     code: `from itertools import combinations
 
@@ -1495,6 +1513,7 @@ for i in list(combinations(dwarf,7)):
     category: '수학',
     difficulty: 'Bronze II',
     url: 'https://www.acmicpc.net/problem/3052',
+    htmlFile: 'problems/boj-3052.html',
     description: '수학, 집합과 맵, 사칙연산',
     code: `num = [0] * 10
 
@@ -1510,6 +1529,7 @@ print(len(set(num)))`,
     category: '구현',
     difficulty: 'Bronze II',
     url: 'https://www.acmicpc.net/problem/10809',
+    htmlFile: 'problems/boj-10809.html',
     description: '구현, 문자열',
     code: `s = [-1] * 26
 s2 = str(input())
@@ -1528,6 +1548,7 @@ print(*s)`,
     category: '수학',
     difficulty: 'Bronze II',
     url: 'https://www.acmicpc.net/problem/22864',
+    htmlFile: 'problems/boj-22864.html',
     description: '수학, 구현, 그리디 알고리즘, 사칙연산, 시뮬레이션',
     code: `A, B, C, M = list(map(int, input().split()))
 
@@ -1553,6 +1574,7 @@ else:
     category: '구현',
     difficulty: 'Bronze III',
     url: 'https://www.acmicpc.net/problem/5597',
+    htmlFile: 'problems/boj-5597.html',
     description: '구현',
     code: `student = [0] * 31
 
@@ -1571,6 +1593,7 @@ for i in range(1, len(student)):
     category: '구현',
     difficulty: 'Bronze IV',
     url: 'https://www.acmicpc.net/problem/11720',
+    htmlFile: 'problems/boj-11720.html',
     description: '구현, 수학, 문자열',
     code: `cnt_num = int(input())
 num = str(input())

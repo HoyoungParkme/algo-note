@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>브루트포스: 차이를 최대로 - 백준 10819</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "from itertools import combinations, permutations",
+      "",
+      "N = int(input())                        # 배열 원소 개수",
+      "pocket = list(map(int, input().split()))# 배열 원소 입력",
+      "",
+      "answer = 0                              # 최대 차이 합 (초기값 0)",
+      "for i in permutations(pocket, N):       # 모든 순열 탐색 (N!가지)",
+      "    diff = 0                            # 현재 순열의 차이 합",
+      "    for j in range(0, len(i)-1):        # 인접 원소 쌍을 순서대로",
+      "        diff += abs(i[j] - i[j+1])      # |A[j] - A[j+1]| 누적",
+      "",
+      "    if diff > answer:                   # 현재 순열이 더 크면",
+      "        answer = diff                   # 최댓값 갱신",
+      "",
+      "print(answer)                           # 최대 차이 합 출력"
+    ];
+
+    // 예제 입력: N=4, pocket=[-1, 2, 4, 1]
+    const INITIAL_POCKET = [-1, 2, 4, 1];
+
+    // 순열 생성 (Heap's Algorithm 느낌으로 직접 구현)
+    function getPermutations(arr) {
+      if (arr.length <= 1) return [arr];
+      const result = [];
+      for (let i = 0; i < arr.length; i++) {
+        const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+        for (const perm of getPermutations(rest)) {
+          result.push([arr[i], ...perm]);
+        }
+      }
+      return result;
+    }
+
+    function calcDiff(perm) {
+      let d = 0;
+      for (let j = 0; j < perm.length - 1; j++) {
+        d += Math.abs(perm[j] - perm[j + 1]);
+      }
+      return d;
+    }
+
+    const generateSimulationSteps = (pocket) => {
+      const steps = [];
+      const perms = getPermutations(pocket);
+      let answer = 0;
+
+      steps.push({
+        codeLine: 0,
+        desc: `입력: pocket = [${pocket.join(', ')}]. 모든 순열을 탐색하여 인접 차이 합의 최대값을 구합니다.`,
+        currentPerm: null,
+        diffPairs: [],
+        diff: null,
+        answer,
+        permsDone: 0,
+        totalPerms: perms.length,
+        isBest: false,
+      });
+
+      steps.push({
+        codeLine: 5,
+        desc: `answer = 0으로 초기화. 총 ${perms.length}개의 순열을 탐색합니다.`,
+        currentPerm: null,
+        diffPairs: [],
+        diff: null,
+        answer,
+        permsDone: 0,
+        totalPerms: perms.length,
+        isBest: false,
+      });
+
+      // 모든 순열을 시각화하면 너무 많으므로 핵심 순열만 추려서 단계 생성
+      // (전체: 4! = 24개 → 대표 순열들 + 최적 순열 전후 포함)
+      const selectedIndices = new Set();
+      // 처음 4개
+      for (let i = 0; i < Math.min(4, perms.length); i++) selectedIndices.add(i);
+      // 중간 2개
+      const mid = Math.floor(perms.length / 2);
+      selectedIndices.add(mid);
+      selectedIndices.add(mid + 1);
+      // 마지막 2개
+      selectedIndices.add(perms.length - 2);
+      selectedIndices.add(perms.length - 1);
+      // 최적값을 가진 순열들
+      const maxDiff = Math.max(...perms.map(calcDiff));
+      perms.forEach((p, i) => { if (calcDiff(p) === maxDiff) selectedIndices.add(i); });
+
+      let lastAnswer = 0;
+      for (let i = 0; i < perms.length; i++) {
+        const perm = perms[i];
+        const diff = calcDiff(perm);
+        const isBest = diff > lastAnswer;
+
+        if (selectedIndices.has(i)) {
+          // 순열 꺼내기 단계
+          steps.push({
+            codeLine: 6,
+            desc: `순열 #${i + 1}/${perms.length}: [${perm.join(', ')}]을(를) 탐색합니다.`,
+            currentPerm: perm,
+            diffPairs: [],
+            diff: 0,
+            answer: lastAnswer,
+            permsDone: i,
+            totalPerms: perms.length,
+            isBest: false,
+          });
+
+          // 인접 차이 계산 단계
+          const pairs = [];
+          let runningDiff = 0;
+          for (let j = 0; j < perm.length - 1; j++) {
+            const d = Math.abs(perm[j] - perm[j + 1]);
+            runningDiff += d;
+            pairs.push({ a: perm[j], b: perm[j + 1], d });
+            steps.push({
+              codeLine: 9,
+              desc: `|${perm[j]} - ${perm[j + 1]}| = ${d}. 누적 diff = ${runningDiff}`,
+              currentPerm: perm,
+              diffPairs: [...pairs],
+              diff: runningDiff,
+              answer: lastAnswer,
+              permsDone: i,
+              totalPerms: perms.length,
+              isBest: false,
+            });
+          }
+
+          // 비교 단계
+          if (isBest) {
+            lastAnswer = diff;
+            steps.push({
+              codeLine: 12,
+              desc: `diff(${diff}) > 현재 최댓값(${lastAnswer === diff ? diff - diff + lastAnswer : lastAnswer}). 🎉 최댓값 갱신! answer = ${diff}`,
+              currentPerm: perm,
+              diffPairs: pairs,
+              diff,
+              answer: diff,
+              permsDone: i + 1,
+              totalPerms: perms.length,
+              isBest: true,
+            });
+          } else {
+            steps.push({
+              codeLine: 11,
+              desc: `diff(${diff}) <= 현재 최댓값(${lastAnswer}). 갱신 없이 다음 순열로.`,
+              currentPerm: perm,
+              diffPairs: pairs,
+              diff,
+              answer: lastAnswer,
+              permsDone: i + 1,
+              totalPerms: perms.length,
+              isBest: false,
+            });
+          }
+        } else {
+          if (isBest) lastAnswer = diff;
+        }
+      }
+
+      // 최종 답
+      steps.push({
+        codeLine: 14,
+        desc: `모든 순열 탐색 완료. 최대 인접 차이 합 = ${lastAnswer}`,
+        currentPerm: null,
+        diffPairs: [],
+        diff: null,
+        answer: lastAnswer,
+        permsDone: perms.length,
+        totalPerms: perms.length,
+        isBest: false,
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps(INITIAL_POCKET);
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\/\/|\.)/g);
+      const keywords = new Set(['from', 'import', 'for', 'in', 'if', 'range', 'def', 'return']);
+      const builtins = new Set(['int', 'input', 'list', 'map', 'abs', 'len', 'print']);
+      const methods = new Set(['split', 'join', 'append']);
+      const modules = new Set(['itertools', 'combinations', 'permutations']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (methods.has(token)) return <span key={i} className="text-yellow-200">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=', '+', '-', '<', '>', '==', '!=', '*', '//', '>=', '<=', '+='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    // 막대 색상: 원소 값에 따라 고정 색상
+    const COLORS = ['bg-violet-400', 'bg-sky-400', 'bg-emerald-400', 'bg-amber-400'];
+    const BORDER_COLORS = ['border-violet-500', 'border-sky-500', 'border-emerald-500', 'border-amber-500'];
+    const TEXT_COLORS = ['text-violet-600', 'text-sky-600', 'text-emerald-600', 'text-amber-600'];
+
+    // 원소 → 색상 인덱스 매핑 (원본 배열 기준으로 고정)
+    const colorMap = {};
+    INITIAL_POCKET.forEach((v, i) => { colorMap[v] = i; });
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) {
+          setCurrentStepIdx(prev => prev + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      }, [currentStepIdx]);
+
+      const handlePrev = () => {
+        if (currentStepIdx > 0) {
+          setCurrentStepIdx(prev => prev - 1);
+          setIsPlaying(false);
+        }
+      };
+
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) {
+          playIntervalRef.current = setInterval(handleNext, 1200);
+        } else {
+          clearInterval(playIntervalRef.current);
+        }
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current && stepData.codeLine !== null) {
+          const activeEl = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const minVal = Math.min(...INITIAL_POCKET);
+      const maxVal = Math.max(...INITIAL_POCKET);
+      const range = maxVal - minVal || 1;
+
+      // 막대 높이 계산 (음수 포함)
+      const getBarHeight = (v) => {
+        return ((v - minVal) / range) * 60 + 20; // 20~80% 범위
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+
+            {/* 헤더 */}
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">브루트포스: 차이를 최대로 시각화</h1>
+              <p className="text-slate-600">
+                배열의 모든 <b>순열(permutation)</b>을 탐색하여 인접 원소 차이의 합 <code className="bg-slate-100 px-1 rounded text-sm">|A[0]-A[1]| + |A[1]-A[2]| + ...</code> 이 최대인 순열을 찾습니다.
+                N ≤ 8이므로 최대 8! = 40,320가지를 전부 시도합니다.
+              </p>
+            </header>
+
+            {/* 현재 단계 설명 */}
+            <div className={`text-white p-5 rounded-xl shadow-sm border flex flex-col justify-center transition-colors duration-300 ${stepData.isBest ? 'bg-emerald-600 border-emerald-700' : 'bg-blue-600 border-blue-700'}`}>
+              <h3 className={`text-xs font-bold mb-2 uppercase tracking-wider ${stepData.isBest ? 'text-emerald-200' : 'text-blue-200'}`}>현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+
+              {/* 왼쪽: 시각화 영역 */}
+              <div className="flex flex-col space-y-4">
+
+                {/* 현재 순열 막대 시각화 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">현재 순열 배치</h2>
+                    <span className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">
+                      {stepData.permsDone} / {stepData.totalPerms} 순열 탐색
+                    </span>
+                  </div>
+
+                  {/* 진행률 바 */}
+                  <div className="w-full bg-slate-100 rounded-full h-2 mb-5">
+                    <div
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${(stepData.permsDone / stepData.totalPerms) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* 막대 그래프 */}
+                  <div className="flex items-end justify-center gap-3 h-32 mb-4 px-4">
+                    {stepData.currentPerm ? (
+                      stepData.currentPerm.map((v, idx) => {
+                        const ci = colorMap[v] ?? idx % 4;
+                        const barH = getBarHeight(v);
+                        return (
+                          <div key={idx} className="flex flex-col items-center flex-1">
+                            <div
+                              className={`w-full rounded-t-md ${COLORS[ci]} transition-all duration-300 flex items-start justify-center pt-1`}
+                              style={{ height: `${barH}%` }}
+                            >
+                              <span className="text-white text-xs font-bold">{v}</span>
+                            </div>
+                            <div className={`text-xs font-bold mt-1 ${TEXT_COLORS[ci]}`}>A[{idx}]</div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-slate-300 text-sm">
+                        순열 탐색 대기 중...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 인접 차이 계산 표시 */}
+                  {stepData.currentPerm && (
+                    <div className="border-t border-slate-100 pt-4">
+                      <h3 className="text-sm font-semibold text-slate-600 mb-2">인접 원소 차이 계산</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {stepData.currentPerm.slice(0, -1).map((v, idx) => {
+                          const next = stepData.currentPerm[idx + 1];
+                          const d = Math.abs(v - next);
+                          const done = stepData.diffPairs.length > idx;
+                          return (
+                            <div
+                              key={idx}
+                              className={`px-3 py-1.5 rounded-lg border text-sm font-mono transition-all duration-300 ${
+                                done
+                                  ? 'bg-violet-50 border-violet-300 text-violet-800'
+                                  : 'bg-slate-50 border-slate-200 text-slate-400'
+                              }`}
+                            >
+                              |{v} - {next}| = <span className="font-bold">{done ? d : '?'}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* diff / answer 상태 패널 */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                      <div className="text-xs text-slate-500 mb-1">현재 순열 diff</div>
+                      <div className="text-2xl font-bold font-mono text-violet-600">
+                        {stepData.diff !== null ? stepData.diff : '—'}
+                      </div>
+                    </div>
+                    <div className={`p-3 rounded-lg border text-center transition-all duration-300 ${stepData.isBest ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-800 border-slate-700'}`}>
+                      <div className={`text-xs mb-1 ${stepData.isBest ? 'text-emerald-600' : 'text-slate-400'}`}>최대 answer</div>
+                      <div className={`text-2xl font-bold font-mono ${stepData.isBest ? 'text-emerald-600' : 'text-emerald-400'}`}>
+                        {stepData.answer}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 컨트롤 버튼 */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">
+                      {isPlaying ? (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>
+                      ) : (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>
+                      )}
+                    </button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              {/* 오른쪽: 코드 뷰어 */}
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div
+                          key={idx}
+                          data-active={isActive ? 'true' : 'false'}
+                          className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}
+                        >
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

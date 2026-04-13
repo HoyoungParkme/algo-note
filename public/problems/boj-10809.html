@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>알파벳 찾기 시각화 - 백준 10809</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "s = [-1] * 26",
+      "s2 = str(input())",
+      "for i in range(len(s2)):",
+      "  n = ord(s2[i]) - ord('a')",
+      "",
+      "  if s[n] == -1:",
+      "    s[n] = i",
+      "",
+      "print(*s)"
+    ];
+
+    const INPUT = "baekjoon";
+    const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+
+    const generateSteps = () => {
+      const steps = [];
+      const result = new Array(26).fill(-1);
+
+      steps.push({
+        codeLine: 0,
+        desc: "알파벳별 첫 등장 위치를 저장할 배열을 -1로 초기화합니다.",
+        result: [...result],
+        charIdx: null,
+        highlightAlpha: null,
+      });
+
+      steps.push({
+        codeLine: 1,
+        desc: `입력 문자열: "${INPUT}"`,
+        result: [...result],
+        charIdx: null,
+        highlightAlpha: null,
+      });
+
+      for (let i = 0; i < INPUT.length; i++) {
+        const ch = INPUT[i];
+        const n = ch.charCodeAt(0) - 'a'.charCodeAt(0);
+
+        steps.push({
+          codeLine: 2,
+          desc: `문자열의 ${i}번째 문자를 확인합니다.`,
+          result: [...result],
+          charIdx: i,
+          highlightAlpha: null,
+        });
+
+        steps.push({
+          codeLine: 3,
+          desc: `'${ch}'의 알파벳 인덱스: ord('${ch}') - ord('a') = ${n}`,
+          result: [...result],
+          charIdx: i,
+          highlightAlpha: n,
+        });
+
+        if (result[n] === -1) {
+          steps.push({
+            codeLine: 5,
+            desc: `s[${n}]이 -1이므로 아직 '${ch}'가 등장하지 않았습니다.`,
+            result: [...result],
+            charIdx: i,
+            highlightAlpha: n,
+          });
+          result[n] = i;
+          steps.push({
+            codeLine: 6,
+            desc: `s[${n}] = ${i} → '${ch}'의 첫 등장 위치를 ${i}로 기록합니다.`,
+            result: [...result],
+            charIdx: i,
+            highlightAlpha: n,
+          });
+        } else {
+          steps.push({
+            codeLine: 5,
+            desc: `s[${n}]이 이미 ${result[n]}이므로 '${ch}'는 이미 등장했습니다. 건너뜁니다.`,
+            result: [...result],
+            charIdx: i,
+            highlightAlpha: n,
+          });
+        }
+      }
+
+      steps.push({
+        codeLine: 8,
+        desc: `모든 문자를 확인했습니다. 결과를 출력합니다.`,
+        result: [...result],
+        charIdx: null,
+        highlightAlpha: null,
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line;
+      let commentPart = '';
+      if (commentIdx !== -1) {
+        codePart = line.slice(0, commentIdx);
+        commentPart = line.slice(commentIdx);
+      }
+      if (!codePart.trim() && commentPart) {
+        return <span className="text-slate-500 italic">{commentPart}</span>;
+      }
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|\*|<|>|\.)/g);
+      const keywords = new Set(['import', 'from', 'while', 'for', 'in', 'if', 'and', 'else']);
+      const builtins = new Set(['range', 'len', 'int', 'str', 'ord', 'print']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=', '+', '-', '*', '<', '>', '==', '!='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return (
+        <>
+          {highlightedTokens}
+          {commentPart && <span className="text-slate-500 italic">{commentPart}</span>}
+        </>
+      );
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(prev => prev + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(prev => prev - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 800);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current && stepData.codeLine !== null) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">알파벳 찾기: 첫 등장 위치 탐색</h1>
+              <p className="text-slate-600">
+                문자열을 한 글자씩 순회하며, 각 알파벳이 <b>처음 등장하는 위치</b>를 기록합니다.
+                이미 등장한 알파벳은 건너뛰고, 등장하지 않은 알파벳은 -1을 유지합니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="flex flex-col space-y-6">
+                {/* 입력 문자열 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">입력 문자열</h2>
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {INPUT.split('').map((ch, idx) => (
+                      <div key={idx} className={`w-12 h-12 flex flex-col items-center justify-center rounded-lg border-2 transition-all ${
+                        stepData.charIdx === idx
+                          ? 'bg-blue-600 text-white border-blue-700 scale-110 shadow-lg'
+                          : stepData.charIdx !== null && idx < stepData.charIdx
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-white text-slate-700 border-slate-200'
+                      }`}>
+                        <span className="text-lg font-bold font-mono">{ch}</span>
+                        <span className="text-[0.55rem] text-opacity-70">{idx}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 결과 배열 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">결과 배열 s[] (a~z 첫 등장 위치)</h2>
+                  <div className="grid grid-cols-13 gap-1">
+                    {stepData.result.map((val, idx) => (
+                      <div key={idx} className={`flex flex-col items-center justify-center rounded-lg border p-1 transition-all ${
+                        stepData.highlightAlpha === idx
+                          ? 'bg-orange-400 text-white border-orange-500 scale-110 shadow-md'
+                          : val !== -1
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-slate-50 text-slate-400 border-slate-200'
+                      }`}>
+                        <span className="text-[0.65rem] font-bold font-mono">{ALPHABET[idx]}</span>
+                        <span className="text-sm font-bold font-mono">{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 컨트롤 */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">
+                      {isPlaying ? (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>
+                      ) : (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>
+                      )}
+                    </button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              {/* 코드 뷰어 */}
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'}
+                          className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

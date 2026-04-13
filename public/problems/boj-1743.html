@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BFS: 음식물 피하기 - 백준 1743</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "from collections import deque",
+      "",
+      "N, M, K = map(int, input().split())     # 행, 열, 음식물 수",
+      "",
+      "points = set()                           # 음식물 좌표 집합",
+      "for _ in range(K):",
+      "    a, b = map(int, input().split())",
+      "    points.add((a, b))                  # 좌표 추가",
+      "",
+      "visit = set()                            # 방문한 좌표",
+      "move = [(0,1),(0,-1),(1,0),(-1,0)]      # 상하좌우 이동",
+      "max_num = 0                              # 가장 큰 덩어리 크기",
+      "",
+      "def bfs(start):                          # BFS로 연결된 음식물 탐색",
+      "    q = deque([start])                   # 시작점을 큐에",
+      "    visit.add(start)",
+      "    cnt = 1                              # 현재 덩어리 크기",
+      "",
+      "    while q:",
+      "        x, y = q.popleft()",
+      "        for dx, dy in move:             # 4방향 이동",
+      "            nx, ny = x+dx, y+dy",
+      "            if (nx,ny) in points and (nx,ny) not in visit:",
+      "                q.append((nx, ny))       # 큐에 추가",
+      "                visit.add((nx, ny))      # 방문 처리",
+      "                cnt += 1                 # 크기 증가",
+      "",
+      "    return cnt                           # 덩어리 크기 반환",
+      "",
+      "for i in points:                         # 모든 음식물 순회",
+      "    if i not in visit:                   # 미방문이면 새 덩어리",
+      "        max_num = max(max_num, bfs(i))   # 최대 크기 갱신",
+      "",
+      "print(max_num)                           # 가장 큰 덩어리 출력"
+    ];
+
+    // 예제: 5×5 그리드, 음식물 좌표 (1-indexed)
+    const NR = 5, NC = 5;
+    const FOOD_POINTS_RAW = [[1,1],[1,2],[2,2],[4,3],[4,4],[5,3]]; // 1-indexed
+    const FOOD_SET = new Set(FOOD_POINTS_RAW.map(([r,c]) => `${r-1},${c-1}`));
+
+    const generateSimulationSteps = () => {
+      const steps = [];
+      const visited = new Set();
+      const MOVE = [[0,1],[0,-1],[1,0],[-1,0]];
+      let maxNum = 0;
+
+      const foodList = FOOD_POINTS_RAW.map(([r,c]) => [r-1, c-1]);
+
+      steps.push({
+        codeLine: 2,
+        desc: `${NR}×${NC} 격자에 ${FOOD_POINTS_RAW.length}개의 음식물이 있습니다. BFS로 연결된 덩어리의 최대 크기를 구합니다.`,
+        visited: new Set(), current: null, checking: null, maxNum: 0, currentGroup: new Set(), groupSizes: [],
+      });
+
+      let groupSizes = [];
+
+      for (const [sr, sc] of foodList) {
+        const key = `${sr},${sc}`;
+        if (visited.has(key)) continue;
+
+        const queue = [[sr, sc]];
+        visited.add(key);
+        const currentGroup = new Set([key]);
+        let cnt = 1;
+
+        steps.push({
+          codeLine: 28,
+          desc: `새 덩어리 발견! (${sr+1}, ${sc+1})에서 BFS 시작.`,
+          visited: new Set(visited), current: [sr, sc], checking: null, maxNum, currentGroup: new Set(currentGroup), groupSizes: [...groupSizes],
+        });
+
+        let qi = 0;
+        while (qi < queue.length) {
+          const [x, y] = queue[qi++];
+          steps.push({
+            codeLine: 19,
+            desc: `큐에서 (${x+1}, ${y+1}) 꺼냄. 4방향 탐색.`,
+            visited: new Set(visited), current: [x, y], checking: null, maxNum, currentGroup: new Set(currentGroup), groupSizes: [...groupSizes],
+          });
+
+          for (const [dx, dy] of MOVE) {
+            const nx = x + dx, ny = y + dy;
+            const nkey = `${nx},${ny}`;
+            if (FOOD_SET.has(nkey) && !visited.has(nkey)) {
+              steps.push({
+                codeLine: 22,
+                desc: `(${nx+1}, ${ny+1})은 음식물이고 미방문 → 큐에 추가, cnt=${cnt+1}`,
+                visited: new Set(visited), current: [x, y], checking: [nx, ny], maxNum, currentGroup: new Set(currentGroup), groupSizes: [...groupSizes],
+              });
+              queue.push([nx, ny]);
+              visited.add(nkey);
+              currentGroup.add(nkey);
+              cnt++;
+            }
+          }
+        }
+
+        if (cnt > maxNum) maxNum = cnt;
+        groupSizes.push(cnt);
+
+        steps.push({
+          codeLine: 30,
+          desc: `덩어리 탐색 완료. 크기 = ${cnt}. 현재 최대 = ${maxNum}`,
+          visited: new Set(visited), current: null, checking: null, maxNum, currentGroup: new Set(currentGroup), groupSizes: [...groupSizes],
+        });
+      }
+
+      steps.push({
+        codeLine: 32,
+        desc: `모든 탐색 완료. 가장 큰 음식물 덩어리 = ${maxNum}`,
+        visited: new Set(visited), current: null, checking: null, maxNum, currentGroup: new Set(), groupSizes: [...groupSizes],
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps();
+
+    const GROUP_COLORS = [
+      { bg: 'bg-violet-500', fill: '#8b5cf6' },
+      { bg: 'bg-sky-500', fill: '#0ea5e9' },
+      { bg: 'bg-amber-500', fill: '#f59e0b' },
+    ];
+
+    // 덩어리별로 색상 미리 계산
+    const groupColorMap = {};
+    let gIdx = 0;
+    const visited2 = new Set();
+    const MOVE2 = [[0,1],[0,-1],[1,0],[-1,0]];
+    for (const [sr, sc] of FOOD_POINTS_RAW.map(([r,c]) => [r-1,c-1])) {
+      const key = `${sr},${sc}`;
+      if (visited2.has(key)) continue;
+      const q = [[sr,sc]]; visited2.add(key);
+      const color = GROUP_COLORS[gIdx % GROUP_COLORS.length].fill;
+      groupColorMap[key] = color;
+      let qi = 0;
+      while (qi < q.length) {
+        const [x,y] = q[qi++];
+        for (const [dx,dy] of MOVE2) {
+          const nk = `${x+dx},${y+dy}`;
+          if (FOOD_SET.has(nk) && !visited2.has(nk)) {
+            q.push([x+dx,y+dy]); visited2.add(nk); groupColorMap[nk] = color;
+          }
+        }
+      }
+      gIdx++;
+    }
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const keywords = new Set(['from', 'import', 'for', 'in', 'if', 'while', 'def', 'return', 'not', 'and']);
+      const builtins = new Set(['int', 'input', 'map', 'deque', 'set', 'max', 'print', 'add']);
+      const modules = new Set(['collections', 'deque']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=','+','-','<','>','==','!=','+='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 900);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const CELL_SIZE = 52;
+
+      const getCellStyle = (r, c) => {
+        const key = `${r},${c}`;
+        const isFood = FOOD_SET.has(key);
+        const isVisited = stepData.visited.has(key);
+        const isCurrent = stepData.current && stepData.current[0] === r && stepData.current[1] === c;
+        const isChecking = stepData.checking && stepData.checking[0] === r && stepData.checking[1] === c;
+
+        if (!isFood) return 'bg-white border-slate-100';
+        if (isCurrent) return 'bg-blue-600 border-blue-400 ring-2 ring-blue-300 scale-110';
+        if (isChecking) return 'bg-orange-400 border-orange-300 ring-2 ring-orange-200';
+        if (isVisited) return '';
+        return 'bg-slate-700 border-slate-500';
+      };
+
+      const getVisitedColor = (r, c) => {
+        const key = `${r},${c}`;
+        return groupColorMap[key] || null;
+      };
+
+      const isCurrent = (r, c) => stepData.current && stepData.current[0] === r && stepData.current[1] === c;
+      const isChecking = (r, c) => stepData.checking && stepData.checking[0] === r && stepData.checking[1] === c;
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">BFS: 음식물 피하기 시각화</h1>
+              <p className="text-slate-600">
+                격자에서 상하좌우로 인접한 음식물을 하나의 <b>덩어리(Flood Fill)</b>로 묶습니다.
+                BFS로 각 덩어리의 크기를 구하여 가장 큰 덩어리를 찾습니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">{NR}×{NC} 격자</h2>
+                    <div className="text-xs bg-slate-800 text-emerald-400 px-2 py-1 rounded font-mono font-bold">최대 덩어리: {stepData.maxNum}</div>
+                  </div>
+
+                  {/* 격자 */}
+                  <div className="flex justify-center mb-4">
+                    <div className="inline-block bg-slate-100 p-2 rounded-lg">
+                      {Array.from({length: NR}, (_, r) => (
+                        <div key={r} className="flex gap-1 mb-1">
+                          {Array.from({length: NC}, (_, c) => {
+                            const key = `${r},${c}`;
+                            const isFood = FOOD_SET.has(key);
+                            const visitedColor = stepData.visited.has(key) ? getVisitedColor(r, c) : null;
+                            const cur = isCurrent(r, c);
+                            const chk = isChecking(r, c);
+
+                            let bg = 'white';
+                            let border = '#e2e8f0';
+                            let content = null;
+
+                            if (cur) { bg = '#2563eb'; border = '#93c5fd'; content = '📍'; }
+                            else if (chk) { bg = '#f97316'; border = '#fed7aa'; content = '👀'; }
+                            else if (visitedColor) { bg = visitedColor; border = visitedColor; content = '🍕'; }
+                            else if (isFood) { bg = '#475569'; border = '#64748b'; content = '🍕'; }
+
+                            return (
+                              <div key={c} style={{ width: CELL_SIZE, height: CELL_SIZE, backgroundColor: bg, border: `2px solid ${border}`, transition: 'all 0.3s' }}
+                                className="flex items-center justify-center rounded-md text-lg">
+                                {content}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 덩어리 크기 이력 */}
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="text-xs text-slate-500 mb-2">발견된 덩어리 크기</div>
+                    <div className="flex gap-2 flex-wrap">
+                      {stepData.groupSizes.map((sz, i) => (
+                        <div key={i} className={`px-3 py-1 rounded-lg text-sm font-bold ${sz === stepData.maxNum ? 'bg-emerald-100 border-2 border-emerald-400 text-emerald-700' : 'bg-slate-100 border border-slate-200 text-slate-600'}`}>
+                          #{i+1}: {sz}
+                        </div>
+                      ))}
+                      {stepData.groupSizes.length === 0 && <span className="text-slate-300 text-xs italic">아직 탐색 전</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

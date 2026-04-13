@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>숫자의 합 시각화 - 백준 11720</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "cnt_num = int(input())",
+      "num = str(input())",
+      "cnt = 0",
+      "",
+      "for i in range(cnt_num):",
+      "  cnt += int(num[i])",
+      "",
+      "print(cnt)"
+    ];
+
+    const DIGITS = "54321";
+    const CNT_NUM = 5;
+
+    const generateSteps = () => {
+      const steps = [];
+      let cnt = 0;
+
+      steps.push({ codeLine: 0, desc: `숫자의 개수를 입력받습니다: ${CNT_NUM}`, digitIdx: null, cnt: 0, addValue: null });
+      steps.push({ codeLine: 1, desc: `숫자 문자열을 입력받습니다: "${DIGITS}"`, digitIdx: null, cnt: 0, addValue: null });
+      steps.push({ codeLine: 2, desc: "합계 변수 cnt를 0으로 초기화합니다.", digitIdx: null, cnt: 0, addValue: null });
+
+      for (let i = 0; i < CNT_NUM; i++) {
+        const digit = parseInt(DIGITS[i]);
+        steps.push({ codeLine: 4, desc: `${i}번째 문자를 확인합니다.`, digitIdx: i, cnt, addValue: null });
+        cnt += digit;
+        steps.push({ codeLine: 5, desc: `num[${i}] = '${DIGITS[i]}' → 정수 ${digit}을 cnt에 더합니다. cnt = ${cnt - digit} + ${digit} = ${cnt}`, digitIdx: i, cnt, addValue: digit });
+      }
+
+      steps.push({ codeLine: 7, desc: `모든 숫자를 더했습니다. 결과: ${cnt}`, digitIdx: null, cnt, addValue: null });
+      return steps;
+    };
+
+    const STEPS = generateSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|\*|<|>|\.)/g);
+      const keywords = new Set(['for', 'in', 'if']);
+      const builtins = new Set(['range', 'int', 'str', 'print', 'input']);
+      const highlightedTokens = tokens.map((t, i) => {
+        if (keywords.has(t)) return <span key={i} className="text-pink-400 font-semibold">{t}</span>;
+        if (builtins.has(t)) return <span key={i} className="text-cyan-400">{t}</span>;
+        if (!isNaN(t) && t.trim() !== '') return <span key={i} className="text-orange-300">{t}</span>;
+        if (['=', '+', '-', '+='].includes(t)) return <span key={i} className="text-pink-400">{t}</span>;
+        return <span key={i} className="text-slate-200">{t}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 800);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current && stepData.codeLine !== null) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">숫자의 합: 문자열 순회 누적</h1>
+              <p className="text-slate-600">
+                문자열로 입력된 숫자를 한 자리씩 순회하며, 각 문자를 정수로 변환해서 <b>누적 합</b>을 구합니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="flex flex-col space-y-6">
+                {/* 숫자 문자열 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">숫자 문자열</h2>
+                  <div className="flex gap-2 justify-center">
+                    {DIGITS.split('').map((d, idx) => (
+                      <div key={idx} className={`w-16 h-16 flex flex-col items-center justify-center rounded-xl border-2 transition-all ${
+                        stepData.digitIdx === idx
+                          ? 'bg-blue-600 text-white border-blue-700 scale-110 shadow-lg'
+                          : stepData.digitIdx !== null && idx < stepData.digitIdx
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-white text-slate-700 border-slate-200'
+                      }`}>
+                        <span className="text-2xl font-bold font-mono">{d}</span>
+                        <span className="text-[0.6rem] opacity-70">idx {idx}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 누적 합계 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">누적 합계 (cnt)</h2>
+                  <div className="flex items-center justify-center gap-6">
+                    <div className="text-6xl font-bold font-mono text-blue-600">{stepData.cnt}</div>
+                    {stepData.addValue !== null && (
+                      <div className="text-2xl font-bold text-emerald-500 animate-bounce">+{stepData.addValue}</div>
+                    )}
+                  </div>
+                  {/* 진행 바 */}
+                  <div className="mt-4 bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-blue-500 h-full rounded-full transition-all" style={{ width: `${(stepData.cnt / 15) * 100}%` }} />
+                  </div>
+                  <div className="mt-1 text-right text-xs text-slate-400">최종값: 15</div>
+                </div>
+
+                {/* 컨트롤 */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">
+                      {isPlaying ? (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>
+                      ) : (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>
+                      )}
+                    </button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              {/* 코드 뷰어 */}
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'}
+                          className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

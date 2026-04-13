@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문자열: IOIOI - 백준 5525</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "N = int(input())                        # 찾을 P_N의 N 값",
+      "M = int(input())                        # 문자열 길이",
+      "S = input()                             # 입력 문자열",
+      "",
+      "# P_N = 'I' + ('OI' * N) → 길이 2N+1",
+      "# 연속된 OI 쌍의 개수를 세어 N 이상인 구간을 카운팅",
+      "",
+      "cnt = 0                                 # 현재까지의 연속 OI 쌍 수",
+      "ans = 0                                 # P_N 등장 횟수",
+      "",
+      "for i in range(1, M-1):                 # I를 기준으로 순회",
+      "    if S[i] == 'O':                     # O이면 스킵",
+      "        continue",
+      "",
+      "    # S[i] == 'I' 인 경우",
+      "    if S[i-1] == 'O' and S[i+1] == 'O': # O-I-O 패턴",
+      "        cnt += 1                         # 연속 OI 쌍 증가",
+      "    else:",
+      "        cnt = 0                          # 패턴 끊김 → 초기화",
+      "",
+      "    if cnt >= N:                         # N개 이상 OI 쌍이 있으면",
+      "        ans += 1                         # P_N 하나 발견!",
+      "",
+      "print(ans)                              # 등장 횟수 출력"
+    ];
+
+    // 예제: N=2, S="IOIOIOIOI"
+    const N_VAL = 2;
+    const S_STR = "IOIOIOIOI";
+    const M_VAL = S_STR.length;
+
+    const generateSimulationSteps = () => {
+      const steps = [];
+      let cnt = 0, ans = 0;
+
+      steps.push({
+        codeLine: 0,
+        desc: `N=${N_VAL}, S="${S_STR}". P_${N_VAL} = "I${'OI'.repeat(N_VAL)}" (길이 ${2*N_VAL+1})의 등장 횟수를 구합니다.`,
+        cnt, ans, i: -1, highlight: null,
+      });
+
+      steps.push({
+        codeLine: 7,
+        desc: `cnt=0, ans=0으로 초기화. 문자를 순서대로 탐색합니다.`,
+        cnt, ans, i: -1, highlight: null,
+      });
+
+      for (let i = 1; i < M_VAL - 1; i++) {
+        const ch = S_STR[i];
+
+        steps.push({
+          codeLine: 10,
+          desc: `i=${i}: '${ch}' 확인.`,
+          cnt, ans, i, highlight: null,
+        });
+
+        if (ch === 'O') {
+          steps.push({
+            codeLine: 11,
+            desc: `'O'이므로 스킵 (I를 기준으로 탐색).`,
+            cnt, ans, i, highlight: [i],
+          });
+          continue;
+        }
+
+        // ch === 'I'
+        const prev = S_STR[i-1], next = S_STR[i+1];
+        if (prev === 'O' && next === 'O') {
+          cnt++;
+          steps.push({
+            codeLine: 15,
+            desc: `S[${i-1}]='${prev}', S[${i}]='I', S[${i+1}]='${next}' → O-I-O 패턴 발견! cnt=${cnt}`,
+            cnt, ans, i, highlight: [i-1, i, i+1],
+          });
+        } else {
+          cnt = 0;
+          steps.push({
+            codeLine: 18,
+            desc: `O-I-O 패턴 아님 → cnt 초기화. cnt=0`,
+            cnt, ans, i, highlight: [i],
+          });
+        }
+
+        if (cnt >= N_VAL) {
+          ans++;
+          steps.push({
+            codeLine: 20,
+            desc: `cnt(${cnt}) ≥ N(${N_VAL}) → P_${N_VAL} 발견! ans=${ans}`,
+            cnt, ans, i,
+            highlight: Array.from({length: 2*N_VAL+1}, (_, k) => i - 2*cnt + 1 + k).filter(x => x >= 0 && x < M_VAL),
+          });
+        }
+      }
+
+      steps.push({
+        codeLine: 22,
+        desc: `탐색 완료! P_${N_VAL}("${'I'+'OI'.repeat(N_VAL)}")의 등장 횟수 = ${ans}`,
+        cnt, ans, i: -1, highlight: null,
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const keywords = new Set(['for','in','if','else','continue','range']);
+      const builtins = new Set(['int','input','print']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=','+','-','<','>','==','!=','>=','+='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        if (token.startsWith("'") || token.startsWith('"')) return <span key={i} className="text-yellow-300">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    const CHAR_STYLE = (ch, idx, highlight, i) => {
+      const isHighlight = highlight && highlight.includes(idx);
+      const isCurrent = idx === i;
+      if (isHighlight && ch === 'I') return 'bg-blue-600 text-white border-blue-400 scale-110';
+      if (isHighlight && ch === 'O') return 'bg-emerald-500 text-white border-emerald-400 scale-105';
+      if (isCurrent && !isHighlight) return 'bg-orange-400 text-white border-orange-300 scale-110';
+      if (ch === 'I') return 'bg-blue-100 text-blue-700 border-blue-200';
+      return 'bg-slate-100 text-slate-500 border-slate-200';
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 1000);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const target = 'I' + 'OI'.repeat(N_VAL);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">문자열: IOIOI 시각화</h1>
+              <p className="text-slate-600">
+                P<sub>N</sub> = "I" + ("OI" × N) = <code className="bg-slate-100 px-1 rounded font-mono">{target}</code>의 등장 횟수를 구합니다.
+                I를 기준으로 O-I-O 패턴이 연속 N번 나타나면 P<sub>N</sub> 하나를 발견한 것입니다.
+              </p>
+            </header>
+
+            <div className={`text-white p-5 rounded-xl shadow-sm border transition-colors ${stepData.ans > 0 && stepData.highlight ? 'bg-emerald-600 border-emerald-700' : 'bg-blue-600 border-blue-700'}`}>
+              <h3 className="text-xs font-bold mb-2 uppercase tracking-wider opacity-70">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">문자열 탐색 현황</h2>
+
+                  {/* 목표 패턴 */}
+                  <div className="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span className="text-xs text-slate-500">목표 패턴 P<sub>{N_VAL}</sub> = </span>
+                    <span className="font-mono font-bold text-blue-700 ml-1">{target}</span>
+                    <span className="text-xs text-slate-400 ml-2">(길이 {target.length})</span>
+                  </div>
+
+                  {/* 문자열 표시 */}
+                  <div className="mb-5">
+                    <div className="text-xs text-slate-500 mb-2">입력 문자열</div>
+                    <div className="flex gap-1">
+                      {S_STR.split('').map((ch, idx) => (
+                        <div key={idx} className={`flex-1 h-12 flex flex-col items-center justify-center rounded-lg border-2 font-mono font-bold text-lg transition-all duration-300 ${CHAR_STYLE(ch, idx, stepData.highlight, stepData.i)}`}>
+                          {ch}
+                          <span className="text-xs font-normal opacity-60">{idx}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 상태 */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                      <div className="text-xs text-slate-500 mb-1">연속 OI 쌍 수 (cnt)</div>
+                      <div className={`text-3xl font-bold font-mono ${stepData.cnt >= N_VAL ? 'text-emerald-600' : 'text-slate-700'}`}>{stepData.cnt}</div>
+                      <div className="text-xs text-slate-400 mt-1">목표 N = {N_VAL}</div>
+                    </div>
+                    <div className={`p-3 rounded-lg border text-center ${stepData.ans > 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className={`text-xs mb-1 ${stepData.ans > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>발견 횟수 (ans)</div>
+                      <div className={`text-3xl font-bold font-mono ${stepData.ans > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>{stepData.ans}</div>
+                    </div>
+                  </div>
+
+                  {/* 범례 */}
+                  <div className="flex flex-wrap gap-3 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                    <div className="flex items-center gap-1"><span className="w-4 h-4 bg-blue-600 rounded inline-block"/>현재 I (O-I-O 패턴 성공)</div>
+                    <div className="flex items-center gap-1"><span className="w-4 h-4 bg-emerald-500 rounded inline-block"/>패턴 내 O</div>
+                    <div className="flex items-center gap-1"><span className="w-4 h-4 bg-orange-400 rounded inline-block"/>현재 탐색 위치</div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '450px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

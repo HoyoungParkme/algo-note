@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>계단 오르기 시각화 - 백준 2579</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "N = int(input())",
+      "S = [0] * N",
+      "for i in range(N):",
+      "    S[i] = int(input())",
+      "",
+      "A = [0] * N  # 한 칸 점프로 도착",
+      "B = [0] * N  # 두 칸 연속 밟아서 도착",
+      "",
+      "A[0] = S[0]",
+      "B[0] = S[0]",
+      "",
+      "for i in range(1, N):",
+      "    if i >= 2:",
+      "        A[i] = S[i] + max(A[i-2], B[i-2])",
+      "    else:",
+      "        A[i] = S[i]",
+      "",
+      "    if i >= 3:",
+      "        B[i] = S[i] + S[i-1] + max(A[i-3], B[i-3])",
+      "    else:",
+      "        B[i] = S[i] + S[i-1]",
+      "",
+      "print(max(A[N-1], B[N-1]))"
+    ];
+
+    const STAIRS = [10, 20, 15, 25, 10, 20];
+    const N = STAIRS.length;
+
+    const generateSteps = () => {
+      const steps = [];
+      const A = new Array(N).fill(0);
+      const B = new Array(N).fill(0);
+
+      steps.push({ codeLine: 0, desc: `계단 ${N}개, 점수: [${STAIRS.join(', ')}]`, A: [...A], B: [...B], current: null });
+
+      A[0] = STAIRS[0]; B[0] = STAIRS[0];
+      steps.push({ codeLine: 8, desc: `A[0] = B[0] = S[0] = ${STAIRS[0]}`, A: [...A], B: [...B], current: 0 });
+
+      for (let i = 1; i < N; i++) {
+        // A[i]: 한 칸 점프 (i-2에서 옴)
+        if (i >= 2) {
+          A[i] = STAIRS[i] + Math.max(A[i-2], B[i-2]);
+          steps.push({ codeLine: 13, desc: `A[${i}] = S[${i}](${STAIRS[i]}) + max(A[${i-2}],B[${i-2}]) = ${STAIRS[i]} + ${Math.max(A[i-2],B[i-2])} = ${A[i]}`, A: [...A], B: [...B], current: i, type: 'A' });
+        } else {
+          A[i] = STAIRS[i];
+          steps.push({ codeLine: 15, desc: `A[${i}] = S[${i}] = ${STAIRS[i]}`, A: [...A], B: [...B], current: i, type: 'A' });
+        }
+
+        // B[i]: 연속 두 칸 (i-1, i 연속 밟음)
+        if (i >= 3) {
+          B[i] = STAIRS[i] + STAIRS[i-1] + Math.max(A[i-3], B[i-3]);
+          steps.push({ codeLine: 18, desc: `B[${i}] = S[${i}]+S[${i-1}] + max(A[${i-3}],B[${i-3}]) = ${STAIRS[i]}+${STAIRS[i-1]}+${Math.max(A[i-3],B[i-3])} = ${B[i]}`, A: [...A], B: [...B], current: i, type: 'B' });
+        } else {
+          B[i] = STAIRS[i] + STAIRS[i-1];
+          steps.push({ codeLine: 20, desc: `B[${i}] = S[${i}] + S[${i-1}] = ${STAIRS[i]} + ${STAIRS[i-1]} = ${B[i]}`, A: [...A], B: [...B], current: i, type: 'B' });
+        }
+      }
+
+      const ans = Math.max(A[N-1], B[N-1]);
+      steps.push({ codeLine: 22, desc: `최종 답: max(A[${N-1}], B[${N-1}]) = max(${A[N-1]}, ${B[N-1]}) = ${ans}`, A: [...A], B: [...B], current: N-1, type: 'done' });
+      return steps;
+    };
+
+    const STEPS = generateSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|\*|%|<|>|\/\/|\.)/g);
+      const keywords = new Set(['for', 'in', 'if', 'else']);
+      const builtins = new Set(['range', 'int', 'max', 'print', 'input']);
+      return <>{tokens.map((t, i) => {
+        if (keywords.has(t)) return <span key={i} className="text-pink-400 font-semibold">{t}</span>;
+        if (builtins.has(t)) return <span key={i} className="text-cyan-400">{t}</span>;
+        if (!isNaN(t) && t.trim() !== '') return <span key={i} className="text-orange-300">{t}</span>;
+        if (['=', '+', '-', '>='].includes(t)) return <span key={i} className="text-pink-400">{t}</span>;
+        return <span key={i} className="text-slate-200">{t}</span>;
+      })}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 1200);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const maxStair = Math.max(...STAIRS);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">계단 오르기: DP 최대 점수</h1>
+              <p className="text-slate-600">
+                계단을 오르며 점수를 최대화합니다. <b>연속 3개 계단은 밟을 수 없고</b>, 마지막 계단은 반드시 밟아야 합니다.
+                A[i]: 한 칸 점프 도착, B[i]: 두 칸 연속 밟아서 도착.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="flex flex-col space-y-6">
+                {/* 계단 시각화 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">계단 (점수)</h2>
+                  <div className="flex items-end gap-2 justify-center" style={{ height: '180px' }}>
+                    {STAIRS.map((s, idx) => {
+                      const isCurrent = stepData.current === idx;
+                      return (
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                          <span className={`text-sm font-bold font-mono ${isCurrent ? 'text-blue-600' : 'text-slate-600'}`}>{s}</span>
+                          <div className={`w-14 rounded-t-lg transition-all border-2 flex items-center justify-center ${
+                            isCurrent ? 'bg-blue-500 border-blue-600 text-white' : 'bg-amber-100 border-amber-300 text-amber-700'
+                          }`} style={{ height: `${(s / maxStair) * 120 + 20}px` }}>
+                            <span className="text-xs font-mono">{idx}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* DP 테이블 */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-3">DP 테이블</h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm font-mono">
+                      <thead>
+                        <tr className="text-slate-500">
+                          <td className="px-2 py-1 font-bold">i</td>
+                          {STAIRS.map((_, i) => <td key={i} className={`px-3 py-1 text-center ${stepData.current === i ? 'text-blue-600 font-bold' : ''}`}>{i}</td>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="px-2 py-1 font-bold text-indigo-600">A[i]</td>
+                          {stepData.A.map((v, i) => (
+                            <td key={i} className={`px-3 py-1 text-center rounded ${
+                              stepData.current === i && stepData.type === 'A' ? 'bg-indigo-100 text-indigo-700 font-bold' :
+                              v > 0 ? 'text-slate-700' : 'text-slate-300'
+                            }`}>{v || '-'}</td>
+                          ))}
+                        </tr>
+                        <tr>
+                          <td className="px-2 py-1 font-bold text-pink-600">B[i]</td>
+                          {stepData.B.map((v, i) => (
+                            <td key={i} className={`px-3 py-1 text-center rounded ${
+                              stepData.current === i && stepData.type === 'B' ? 'bg-pink-100 text-pink-700 font-bold' :
+                              v > 0 ? 'text-slate-700' : 'text-slate-300'
+                            }`}>{v || '-'}</td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 text-xs text-slate-500">
+                    <span className="text-indigo-600 font-bold">A[i]</span>: i-2에서 한 칸 점프 &nbsp;|&nbsp;
+                    <span className="text-pink-600 font-bold">B[i]</span>: i-1에서 연속 밟기
+                  </div>
+                </div>
+
+                {/* 컨트롤 */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">
+                      {isPlaying ? (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>
+                      ) : (
+                        <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>
+                      )}
+                    </button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'}
+                          className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

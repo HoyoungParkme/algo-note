@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>다익스트라: 최단경로 - 백준 1753</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "import heapq",
+      "import sys",
+      "input = sys.stdin.readline",
+      "",
+      "V, E = list(map(int, input().split()))  # 정점 수, 간선 수",
+      "K = int(input()) - 1                    # 시작 정점 (0-indexed)",
+      "",
+      "adj = [[] for _ in range(V)]            # 인접 리스트",
+      "",
+      "for _ in range(E):                      # 간선 입력",
+      "    u, v, w = list(map(int, input().split()))",
+      "    adj[u-1].append((v-1, w))           # (도착지, 가중치)",
+      "",
+      "dist = [1e9] * V                        # 최단거리 (초기값 무한대)",
+      "dist[K] = 0                             # 시작점 거리 = 0",
+      "pq = []",
+      "heapq.heappush(pq, (0, K))              # (거리, 노드) 쌍으로 힙에 추가",
+      "",
+      "while pq:",
+      "    d, u = heapq.heappop(pq)            # 거리 최소인 노드 꺼냄",
+      "",
+      "    if d != dist[u]:                    # 이미 처리된 노드면 스킵",
+      "        continue",
+      "",
+      "    for v, w in adj[u]:                 # 인접 노드 탐색",
+      "        if dist[v] > dist[u] + w:       # 더 짧은 경로 발견",
+      "            dist[v] = dist[u] + w       # 거리 갱신",
+      "            heapq.heappush(pq, (dist[v], v))",
+      "",
+      "for i in range(V):                      # 결과 출력",
+      "    if dist[i] == 1e9:",
+      "        print(\"INF\")                    # 도달 불가",
+      "    else:",
+      "        print(dist[i])                  # 최단거리 출력"
+    ];
+
+    // 예제: V=5, E=6, K=1(0-indexed: 0)
+    const V = 5, START = 0;
+    const EDGES_RAW = [[1,2,2],[1,3,3],[2,3,1],[2,4,4],[3,5,1],[4,5,2]];
+    const EDGES = EDGES_RAW.map(([u,v,w]) => [u-1, v-1, w]);
+    const ADJ = Array.from({length: V}, () => []);
+    EDGES.forEach(([u,v,w]) => ADJ[u].push([v,w]));
+
+    const NODE_POS = [
+      {x:100, y:160}, // 0 (노드1)
+      {x:220, y:80},  // 1 (노드2)
+      {x:220, y:240}, // 2 (노드3)
+      {x:340, y:80},  // 3 (노드4)
+      {x:340, y:240}, // 4 (노드5)
+    ];
+
+    const INF = 1e9;
+
+    const generateSimulationSteps = () => {
+      const steps = [];
+      const dist = new Array(V).fill(INF);
+      dist[START] = 0;
+      // Min-heap simulation
+      const pq = [[0, START]]; // [dist, node]
+      const processed = new Set();
+
+      steps.push({
+        codeLine: 13,
+        desc: `dist 배열 초기화: 시작 노드(${START+1})=0, 나머지=INF. 힙에 (0, ${START+1}) 삽입.`,
+        dist: [...dist], pq: [...pq], current: null, processed: new Set(),
+      });
+
+      while (pq.length > 0) {
+        pq.sort((a,b) => a[0]-b[0]);
+        const [d, u] = pq.shift();
+
+        steps.push({
+          codeLine: 19,
+          desc: `힙에서 (거리=${d}, 노드=${u+1}) 꺼냄.`,
+          dist: [...dist], pq: [...pq], current: u, processed: new Set(processed),
+        });
+
+        if (d !== dist[u]) {
+          steps.push({
+            codeLine: 21,
+            desc: `거리(${d}) ≠ dist[${u+1}](${dist[u]}): 이미 처리된 노드 → 스킵.`,
+            dist: [...dist], pq: [...pq], current: u, processed: new Set(processed),
+          });
+          continue;
+        }
+
+        processed.add(u);
+
+        for (const [v, w] of ADJ[u]) {
+          steps.push({
+            codeLine: 24,
+            desc: `간선 ${u+1}→${v+1} (가중치 ${w}): dist[${v+1}] = ${dist[v] === INF ? 'INF' : dist[v]}  vs  ${dist[u]} + ${w} = ${dist[u]+w}`,
+            dist: [...dist], pq: [...pq], current: u, checking: v, processed: new Set(processed),
+          });
+
+          if (dist[v] > dist[u] + w) {
+            dist[v] = dist[u] + w;
+            pq.push([dist[v], v]);
+            steps.push({
+              codeLine: 25,
+              desc: `✅ dist[${v+1}] 갱신: ${dist[v] === dist[u]+w ? dist[v] : '?'} → 힙에 (${dist[v]}, ${v+1}) 추가.`,
+              dist: [...dist], pq: [...pq], current: u, checking: v, processed: new Set(processed),
+            });
+          }
+        }
+      }
+
+      steps.push({
+        codeLine: 28,
+        desc: `다익스트라 완료! 노드 ${START+1}에서의 최단거리: ${dist.map((d,i) => `${i+1}:${d===INF?'INF':d}`).join(', ')}`,
+        dist: [...dist], pq: [], current: null, processed: new Set(processed),
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const keywords = new Set(['import','for','in','if','while','not','else','continue','range']);
+      const builtins = new Set(['int','input','list','map','print','range','len']);
+      const modules = new Set(['heapq','sys','stdin','heappush','heappop','readline']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=','+','-','<','>','==','!=','>','>='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 1200);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const getNodeStyle = (i) => {
+        const isStart = i === START;
+        const isCurrent = stepData.current === i;
+        const isChecking = stepData.checking === i;
+        const isDone = stepData.processed && stepData.processed.has(i);
+
+        if (isCurrent) return { fill: '#2563eb', stroke: '#93c5fd', text: 'white' };
+        if (isChecking) return { fill: '#f97316', stroke: '#fed7aa', text: 'white' };
+        if (isDone) return { fill: '#10b981', stroke: '#6ee7b7', text: 'white' };
+        if (isStart) return { fill: '#7c3aed', stroke: '#c4b5fd', text: 'white' };
+        return { fill: '#e2e8f0', stroke: '#94a3b8', text: '#64748b' };
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">다익스트라: 최단경로 시각화</h1>
+              <p className="text-slate-600">
+                <b>다익스트라(Dijkstra)</b> 알고리즘은 가중치 그래프에서 단일 출발지 최단경로를 구합니다.
+                최소 힙(우선순위 큐)을 사용하여 항상 현재까지 발견된 최단 거리 노드를 먼저 처리합니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">그래프 (시작: 노드 {START+1})</h2>
+                    <div className="flex gap-2 text-xs">
+                      <div className="flex items-center gap-1"><span className="w-3 h-3 bg-violet-600 rounded-full inline-block"/>시작</div>
+                      <div className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-600 rounded-full inline-block"/>처리 중</div>
+                      <div className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500 rounded-full inline-block"/>처리 완료</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center mb-4">
+                    <svg width="440" height="320" className="rounded-lg bg-slate-50 border border-slate-200">
+                      <defs>
+                        <marker id="arrow2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                          <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                        </marker>
+                      </defs>
+                      {EDGES.map(([u,v,w], ei) => {
+                        const pu = NODE_POS[u], pv = NODE_POS[v];
+                        const dx = pv.x-pu.x, dy = pv.y-pu.y;
+                        const len = Math.sqrt(dx*dx+dy*dy);
+                        const nx=dx/len, ny=dy/len;
+                        const mx = (pu.x+pv.x)/2 - ny*15;
+                        const my = (pu.y+pv.y)/2 + nx*15;
+                        return (
+                          <g key={ei}>
+                            <line x1={pu.x+nx*26} y1={pu.y+ny*26} x2={pv.x-nx*28} y2={pv.y-ny*28}
+                              stroke="#94a3b8" strokeWidth="2" markerEnd="url(#arrow2)"/>
+                            <text x={mx} y={my} textAnchor="middle" fill="#64748b" fontWeight="bold" fontSize="12">{w}</text>
+                          </g>
+                        );
+                      })}
+                      {Array.from({length: V}, (_, i) => {
+                        const s = getNodeStyle(i);
+                        const pos = NODE_POS[i];
+                        const d = stepData.dist[i];
+                        return (
+                          <g key={i}>
+                            <circle cx={pos.x} cy={pos.y} r="26" fill={s.fill} stroke={s.stroke} strokeWidth="2.5" style={{transition:'fill 0.3s'}}/>
+                            <text x={pos.x} y={pos.y-4} textAnchor="middle" dominantBaseline="middle" fill={s.text} fontWeight="bold" fontSize="13">{i+1}</text>
+                            <text x={pos.x} y={pos.y+10} textAnchor="middle" fill={s.text} fontSize="10" opacity="0.9">
+                              {d === INF ? '∞' : d}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* dist 배열 */}
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="text-xs text-slate-500 mb-2">dist[] 배열 (최단거리)</div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {stepData.dist.map((d, i) => (
+                        <div key={i} className={`text-center p-2 rounded-lg border transition-all ${d < INF ? 'bg-sky-50 border-sky-300' : 'bg-slate-50 border-slate-200'} ${stepData.current === i ? 'ring-2 ring-blue-400' : ''}`}>
+                          <div className="text-xs text-slate-400">노드{i+1}</div>
+                          <div className="font-bold font-mono text-sm">{d === INF ? '∞' : d}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 힙 상태 */}
+                  <div className="mt-3">
+                    <div className="text-xs text-slate-500 mb-1">우선순위 큐 (힙)</div>
+                    <div className="flex gap-2 flex-wrap min-h-[32px] items-center p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                      {stepData.pq.length === 0 && <span className="text-slate-300 text-xs italic">비어있음</span>}
+                      {[...stepData.pq].sort((a,b)=>a[0]-b[0]).map(([d,n], i) => (
+                        <span key={i} className="px-2 py-1 bg-amber-100 border border-amber-300 text-amber-800 rounded text-xs font-mono">({d}, 노드{n+1})</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

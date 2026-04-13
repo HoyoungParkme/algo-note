@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>위상정렬: 줄 세우기 - 백준 2252</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "from collections import deque",
+      "",
+      "N, M = list(map(int, input().split()))  # N명, M개 조건",
+      "",
+      "adj = [[] for _ in range(N)]            # 선행 관계 (a→b: a가 b보다 앞)",
+      "need_learn = [0] * N                    # 진입 차수 (앞에 서야 하는 사람 수)",
+      "",
+      "for i in range(M):                      # 조건 입력",
+      "    a, b = list(map(int, input().split()))",
+      "    adj[a-1].append(b-1)               # a가 b보다 앞",
+      "    need_learn[b-1] += 1               # b의 진입차수 증가",
+      "",
+      "# 위상 정렬 시작",
+      "queue = deque([])                       # 진입차수가 0인 노드부터",
+      "for i in range(N):                      # 초기 큐 구성",
+      "    if need_learn[i] == 0:",
+      "        queue.append(i)",
+      "",
+      "learn = []                              # 결과 순서",
+      "while len(queue) != 0:                  # 큐가 빌 때까지",
+      "    u = queue.popleft()                 # 현재 처리할 노드",
+      "    learn.append(u)                     # 결과에 추가",
+      "",
+      "    for v in adj[u]:                    # 후행 노드의 진입차수 감소",
+      "        need_learn[v] -= 1",
+      "        if need_learn[v] == 0:          # 진입차수 0이 되면 큐에 추가",
+      "            queue.append(v)",
+      "",
+      "for i in range(N):                      # 결과 출력",
+      "    print(learn[i] + 1, end=\" \")"
+    ];
+
+    const N_NODES = 5;
+    // 조건: a가 b 앞 (1-indexed)
+    const EDGES_RAW = [[3,1],[3,2],[1,4],[2,4],[4,5]];
+    const EDGES = EDGES_RAW.map(([a,b]) => [a-1,b-1]);
+    const ADJ = Array.from({length: N_NODES}, () => []);
+    const IN_DEG = new Array(N_NODES).fill(0);
+    EDGES.forEach(([a,b]) => { ADJ[a].push(b); IN_DEG[b]++; });
+
+    const NODE_POS = [
+      {x:200, y:200}, // 0 (node 1)
+      {x:300, y:200}, // 1 (node 2)
+      {x:100, y:120}, // 2 (node 3)
+      {x:250, y:300}, // 3 (node 4)
+      {x:350, y:300}, // 4 (node 5)
+    ];
+
+    const generateSimulationSteps = () => {
+      const steps = [];
+      const inDeg = [...IN_DEG];
+      const queue = [];
+      const result = [];
+
+      steps.push({
+        codeLine: 2,
+        desc: `N=${N_NODES}명을 줄 세웁니다. 진입차수가 0인 노드부터 처리합니다.`,
+        inDeg: [...inDeg], queue: [...queue], result: [...result], current: null,
+      });
+
+      steps.push({
+        codeLine: 13,
+        desc: `초기 진입차수: [${inDeg.map((d,i)=>`${i+1}:${d}`).join(', ')}]. 진입차수 0인 노드를 큐에 넣습니다.`,
+        inDeg: [...inDeg], queue: [...queue], result: [...result], current: null,
+      });
+
+      for (let i = 0; i < N_NODES; i++) {
+        if (inDeg[i] === 0) {
+          queue.push(i);
+          steps.push({
+            codeLine: 15,
+            desc: `노드 ${i+1}의 진입차수 = 0 → 큐에 추가.`,
+            inDeg: [...inDeg], queue: [...queue], result: [...result], current: null,
+          });
+        }
+      }
+
+      while (queue.length > 0) {
+        const u = queue.shift();
+        result.push(u);
+
+        steps.push({
+          codeLine: 19,
+          desc: `큐에서 노드 ${u+1} 꺼냄 → 결과에 추가. 현재 순서: [${result.map(v=>v+1).join(', ')}]`,
+          inDeg: [...inDeg], queue: [...queue], result: [...result], current: u,
+        });
+
+        for (const v of ADJ[u]) {
+          inDeg[v]--;
+          steps.push({
+            codeLine: 23,
+            desc: `노드 ${u+1} → ${v+1}: 진입차수 ${inDeg[v]+1} → ${inDeg[v]}${inDeg[v]===0?' → 0이 됨! 큐에 추가':''}`,
+            inDeg: [...inDeg], queue: [...queue], result: [...result], current: u, checking: v,
+          });
+          if (inDeg[v] === 0) {
+            queue.push(v);
+          }
+        }
+      }
+
+      steps.push({
+        codeLine: 27,
+        desc: `정렬 완료! 줄 세우기 결과: ${result.map(v=>v+1).join(' ')}`,
+        inDeg: [...inDeg], queue: [...queue], result: [...result], current: null,
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const keywords = new Set(['from','import','for','in','if','while','range','not']);
+      const builtins = new Set(['int','input','list','map','deque','len','print','range']);
+      const modules = new Set(['collections','deque']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=','+','-','<','>','==','!=','-=','+='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 1100);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const getNodeStyle = (i) => {
+        const isDone = stepData.result.includes(i);
+        const isCurrent = stepData.current === i;
+        const isChecking = stepData.checking === i;
+        const isInQueue = stepData.queue.includes(i);
+
+        if (isCurrent) return { fill: '#2563eb', stroke: '#93c5fd', text: 'white' };
+        if (isChecking) return { fill: '#f97316', stroke: '#fed7aa', text: 'white' };
+        if (isDone) return { fill: '#10b981', stroke: '#6ee7b7', text: 'white' };
+        if (isInQueue) return { fill: '#bfdbfe', stroke: '#3b82f6', text: '#1d4ed8' };
+        return { fill: '#e2e8f0', stroke: '#94a3b8', text: '#64748b' };
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">위상정렬: 줄 세우기 시각화</h1>
+              <p className="text-slate-600">
+                "A가 B보다 앞에 서야 한다"는 조건들을 만족하는 줄 순서를 찾습니다.
+                <b>위상정렬(Kahn's Algorithm)</b>: 진입차수 0인 노드를 큐에서 꺼내 처리하며, 연결된 노드의 진입차수를 감소시킵니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">DAG 그래프 & 진입차수</h2>
+                    <div className="flex gap-2 text-xs">
+                      <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-200 border border-blue-400 inline-block"/>큐 대기</div>
+                      <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"/>처리 완료</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center mb-4">
+                    <svg width="420" height="360" className="rounded-lg bg-slate-50 border border-slate-200">
+                      <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                          <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+                        </marker>
+                      </defs>
+                      {EDGES.map(([u,v], ei) => {
+                        const pu = NODE_POS[u], pv = NODE_POS[v];
+                        const dx = pv.x - pu.x, dy = pv.y - pu.y;
+                        const len = Math.sqrt(dx*dx+dy*dy);
+                        const nx = dx/len, ny = dy/len;
+                        return (
+                          <line key={ei}
+                            x1={pu.x + nx*26} y1={pu.y + ny*26}
+                            x2={pv.x - nx*28} y2={pv.y - ny*28}
+                            stroke="#94a3b8" strokeWidth="2"
+                            markerEnd="url(#arrowhead)"
+                          />
+                        );
+                      })}
+                      {Array.from({length: N_NODES}, (_, i) => {
+                        const s = getNodeStyle(i);
+                        const pos = NODE_POS[i];
+                        return (
+                          <g key={i}>
+                            <circle cx={pos.x} cy={pos.y} r="24" fill={s.fill} stroke={s.stroke} strokeWidth="2.5" style={{transition: 'fill 0.3s'}}/>
+                            <text x={pos.x} y={pos.y + 1} textAnchor="middle" dominantBaseline="middle" fill={s.text} fontWeight="bold" fontSize="14">{i+1}</text>
+                            {/* 진입차수 */}
+                            <circle cx={pos.x+18} cy={pos.y-18} r="10" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1"/>
+                            <text x={pos.x+18} y={pos.y-18} textAnchor="middle" dominantBaseline="middle" fill="#475569" fontWeight="bold" fontSize="10">
+                              {stepData.inDeg[i]}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* 큐 & 결과 */}
+                  <div className="space-y-3 border-t border-slate-100 pt-3">
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">큐 (진입차수 0인 노드)</div>
+                      <div className="flex gap-2 min-h-[36px] items-center p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                        {stepData.queue.length === 0 && <span className="text-slate-300 text-xs italic">비어있음</span>}
+                        {stepData.queue.map((n, i) => (
+                          <span key={i} className="px-2 py-1 bg-blue-100 border border-blue-300 text-blue-700 rounded text-sm font-mono font-bold">{n+1}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">결과 순서</div>
+                      <div className="flex gap-2 min-h-[36px] items-center p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        {stepData.result.length === 0 && <span className="text-slate-300 text-xs italic">아직 없음</span>}
+                        {stepData.result.map((n, i) => (
+                          <span key={i} className="px-2 py-1 bg-emerald-100 border border-emerald-300 text-emerald-700 rounded text-sm font-mono font-bold">{n+1}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

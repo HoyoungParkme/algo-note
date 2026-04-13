@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BFS: 연결 요소의 개수 - 백준 11724</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "import sys",
+      "from collections import deque",
+      "input = sys.stdin.readline",
+      "",
+      "N, M = list(map(int, input().split()))  # 노드 수, 간선 수",
+      "adj = [[] for i in range(N)]            # 인접 리스트",
+      "",
+      "for _ in range(M):                      # 간선 입력",
+      "    u, v = list(map(int, input().split()))",
+      "    adj[u-1].append(v-1)                # 양방향 연결",
+      "    adj[v-1].append(u-1)",
+      "",
+      "visit = [False] * N                     # 방문 여부",
+      "cnt = 0                                 # 연결 요소 수",
+      "",
+      "for i in range(N):                      # 모든 노드 순회",
+      "    if visit[i]:                        # 이미 방문한 노드면 스킵",
+      "        continue",
+      "",
+      "    cnt += 1                            # 새 연결 요소 발견",
+      "    queue = deque([i])                  # BFS 시작",
+      "    visit[i] = True",
+      "",
+      "    while len(queue) != 0:              # BFS 탐색",
+      "        u = queue.popleft()",
+      "",
+      "        for v in adj[u]:               # 인접 노드 탐색",
+      "            if not visit[v]:           # 미방문이면",
+      "                queue.append(v)        # 큐에 추가",
+      "                visit[v] = True        # 방문 처리",
+      "",
+      "print(cnt)                             # 연결 요소 총 개수 출력"
+    ];
+
+    // 예제: N=6, M=5
+    // 연결: 1-2, 2-5, 5-1, 3-4, 6 (독립)
+    const N_NODES = 6;
+    const EDGES = [[0,1],[1,4],[4,0],[2,3]]; // 0-indexed
+    const ADJ = Array.from({length: N_NODES}, () => []);
+    EDGES.forEach(([u,v]) => { ADJ[u].push(v); ADJ[v].push(u); });
+
+    // 노드 위치 (원형 배치)
+    const NODE_POS = [
+      {x: 120, y: 80},  // 0
+      {x: 220, y: 80},  // 1
+      {x: 120, y: 180}, // 2
+      {x: 220, y: 180}, // 3
+      {x: 170, y: 140}, // 4
+      {x: 320, y: 130}, // 5 (독립)
+    ];
+
+    const COMPONENT_COLORS = ['bg-violet-500', 'bg-sky-500', 'bg-emerald-500'];
+    const COMPONENT_FILL = ['#8b5cf6', '#0ea5e9', '#10b981'];
+    const COMPONENT_LIGHT = ['bg-violet-100 border-violet-400 text-violet-700', 'bg-sky-100 border-sky-400 text-sky-700', 'bg-emerald-100 border-emerald-400 text-emerald-700'];
+
+    const generateSimulationSteps = () => {
+      const steps = [];
+      const visit = new Array(N_NODES).fill(false);
+      const componentOf = new Array(N_NODES).fill(-1);
+      let cnt = 0;
+
+      steps.push({
+        codeLine: 4,
+        desc: `N=${N_NODES}개 노드, M=${EDGES.length}개 간선. 연결 요소 개수를 구합니다.`,
+        visit: [...visit], componentOf: [...componentOf], cnt, current: null, queue: [],
+      });
+
+      steps.push({
+        codeLine: 12,
+        desc: `방문 배열 초기화 완료. 각 노드를 순서대로 확인합니다.`,
+        visit: [...visit], componentOf: [...componentOf], cnt, current: null, queue: [],
+      });
+
+      for (let i = 0; i < N_NODES; i++) {
+        steps.push({
+          codeLine: 15,
+          desc: `노드 ${i+1} 확인. ${visit[i] ? '이미 방문 → 스킵' : '미방문 → 새 연결 요소!'}`,
+          visit: [...visit], componentOf: [...componentOf], cnt, current: i, queue: [],
+        });
+
+        if (visit[i]) continue;
+
+        cnt++;
+        const curComp = cnt - 1;
+        const queue = [i];
+        visit[i] = true;
+        componentOf[i] = curComp;
+
+        steps.push({
+          codeLine: 19,
+          desc: `연결 요소 #${cnt} 발견! 노드 ${i+1}을 시작으로 BFS 탐색 시작.`,
+          visit: [...visit], componentOf: [...componentOf], cnt, current: i, queue: [...queue],
+        });
+
+        let qi = 0;
+        while (qi < queue.length) {
+          const u = queue[qi++];
+
+          steps.push({
+            codeLine: 23,
+            desc: `큐에서 노드 ${u+1} 꺼냄. 인접 노드를 탐색합니다.`,
+            visit: [...visit], componentOf: [...componentOf], cnt, current: u, queue: queue.slice(qi - 1),
+          });
+
+          for (const v of ADJ[u]) {
+            steps.push({
+              codeLine: 26,
+              desc: `노드 ${u+1}의 이웃 ${v+1} 확인. ${visit[v] ? '이미 방문 → 스킵' : '미방문 → BFS 큐에 추가'}`,
+              visit: [...visit], componentOf: [...componentOf], cnt, current: u, queue: queue.slice(qi - 1), checking: v,
+            });
+
+            if (!visit[v]) {
+              queue.push(v);
+              visit[v] = true;
+              componentOf[v] = curComp;
+
+              steps.push({
+                codeLine: 28,
+                desc: `노드 ${v+1}을 방문 처리하고 큐에 추가.`,
+                visit: [...visit], componentOf: [...componentOf], cnt, current: u, queue: queue.slice(qi - 1), checking: v,
+              });
+            }
+          }
+        }
+      }
+
+      steps.push({
+        codeLine: 30,
+        desc: `모든 탐색 완료. 연결 요소 총 개수 = ${cnt}`,
+        visit: [...visit], componentOf: [...componentOf], cnt, current: null, queue: [],
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\/\/|\.)/g);
+      const keywords = new Set(['import', 'from', 'for', 'in', 'if', 'while', 'not', 'continue']);
+      const builtins = new Set(['int', 'input', 'list', 'map', 'len', 'range', 'print', 'True', 'False']);
+      const modules = new Set(['sys', 'collections', 'deque', 'stdin']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=', '+', '-', '<', '>', '==', '!=', '+='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 900);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const getNodeColor = (i) => {
+        const comp = stepData.componentOf[i];
+        const isCurrent = stepData.current === i;
+        const isChecking = stepData.checking === i;
+        const isInQueue = stepData.queue && stepData.queue.includes(i);
+
+        if (isCurrent) return { fill: '#2563eb', stroke: '#93c5fd', text: 'white' };
+        if (isChecking) return { fill: '#f97316', stroke: '#fed7aa', text: 'white' };
+        if (isInQueue) return { fill: '#bfdbfe', stroke: '#3b82f6', text: '#1d4ed8' };
+        if (comp >= 0) return { fill: COMPONENT_FILL[comp % 3], stroke: 'white', text: 'white' };
+        return { fill: '#e2e8f0', stroke: '#94a3b8', text: '#64748b' };
+      };
+
+      const SVG_W = 400, SVG_H = 260;
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">BFS: 연결 요소의 개수 시각화</h1>
+              <p className="text-slate-600">
+                방문하지 않은 노드를 만날 때마다 BFS로 연결된 모든 노드를 탐색합니다.
+                이렇게 탐색된 묶음을 <b>연결 요소(Connected Component)</b>라고 하며, 이 과정을 반복하여 전체 개수를 셉니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">그래프 탐색</h2>
+                    <div className="text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded font-mono font-bold">연결 요소 수: {stepData.cnt}</div>
+                  </div>
+
+                  {/* 범례 */}
+                  <div className="flex flex-wrap gap-3 mb-4 text-xs text-slate-500">
+                    <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-600 inline-block" /> 현재 탐색</div>
+                    <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block" /> 확인 중</div>
+                    <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-200 inline-block border border-blue-400" /> 큐 대기</div>
+                    {[0,1,2].map(c => (
+                      <div key={c} className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full inline-block" style={{ background: COMPONENT_FILL[c] }} /> 요소 #{c+1}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* SVG 그래프 */}
+                  <div className="flex justify-center">
+                    <svg width={SVG_W} height={SVG_H} className="rounded-lg bg-slate-50 border border-slate-200">
+                      {EDGES.map(([u, v], ei) => (
+                        <line key={ei}
+                          x1={NODE_POS[u].x} y1={NODE_POS[u].y}
+                          x2={NODE_POS[v].x} y2={NODE_POS[v].y}
+                          stroke="#cbd5e1" strokeWidth="2"
+                        />
+                      ))}
+                      {Array.from({length: N_NODES}, (_, i) => {
+                        const c = getNodeColor(i);
+                        return (
+                          <g key={i}>
+                            <circle cx={NODE_POS[i].x} cy={NODE_POS[i].y} r="22"
+                              fill={c.fill} stroke={c.stroke} strokeWidth="2.5"
+                              style={{ transition: 'fill 0.3s, stroke 0.3s' }}
+                            />
+                            <text x={NODE_POS[i].x} y={NODE_POS[i].y + 1}
+                              textAnchor="middle" dominantBaseline="middle"
+                              fill={c.text} fontWeight="bold" fontSize="14"
+                            >{i+1}</text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* 큐 상태 */}
+                  <div className="mt-4 pt-3 border-t border-slate-100">
+                    <div className="text-xs text-slate-500 mb-2">BFS 큐 상태</div>
+                    <div className="flex gap-2 flex-wrap min-h-[36px] items-center p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                      {(!stepData.queue || stepData.queue.length === 0) && <span className="text-slate-400 text-xs italic">큐가 비어있습니다.</span>}
+                      {stepData.queue && stepData.queue.map((n, i) => (
+                        <span key={i} className="px-2 py-1 bg-blue-100 border border-blue-300 text-blue-700 rounded text-sm font-mono font-bold">노드 {n+1}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 컨트롤 */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              {/* 코드 뷰어 */}
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

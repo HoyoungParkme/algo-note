@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BFS: 케빈 베이컨의 6단계 법칙 - 백준 1389</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "from collections import deque",
+      "",
+      "N, M = map(int, input().split())        # 사람 수, 친구 관계 수",
+      "adj = [[] for _ in range(N)]            # 인접 리스트",
+      "",
+      "for _ in range(M):                      # 친구 관계 입력",
+      "    a, b = map(int, input().split())",
+      "    adj[a-1].append(b-1)               # 양방향 연결",
+      "    adj[b-1].append(a-1)",
+      "",
+      "kevin = []                              # 케빈 베이컨 수 저장",
+      "",
+      "def bfs(start):                         # 시작 노드에서 BFS",
+      "    dist = [-1] * N",
+      "    dist[start] = 0",
+      "    queue = deque([start])",
+      "",
+      "    while queue:                        # 모든 연결된 노드 탐색",
+      "        u = queue.popleft()",
+      "        for v in adj[u]:",
+      "            if dist[v] == -1:           # 미방문이면",
+      "                dist[v] = dist[u] + 1  # 거리 = 이전 + 1",
+      "                queue.append(v)",
+      "",
+      "    return sum(d for d in dist if d >= 0)  # 총 거리 합",
+      "",
+      "for i in range(N):                      # 각 사람에서 BFS 실행",
+      "    kevin.append(bfs(i))",
+      "",
+      "min_kb = min(kevin)                     # 최소 케빈 베이컨 수",
+      "print(kevin.index(min_kb) + 1)          # 해당 사람 출력"
+    ];
+
+    const N_NODES = 5;
+    const EDGES_RAW = [[1,3],[1,4],[2,3],[3,4],[4,5]];
+    const EDGES = EDGES_RAW.map(([a,b]) => [a-1,b-1]);
+    const ADJ = Array.from({length: N_NODES}, () => []);
+    EDGES.forEach(([u,v]) => { ADJ[u].push(v); ADJ[v].push(u); });
+
+    const NODE_POS = [
+      {x:100, y:160},
+      {x:220, y:80},
+      {x:340, y:160},
+      {x:220, y:240},
+      {x:380, y:80},
+    ];
+
+    const generateSimulationSteps = () => {
+      const steps = [];
+      const kevinScores = [];
+
+      steps.push({
+        codeLine: 2,
+        desc: `N=${N_NODES}명. 각 사람에서 BFS로 케빈 베이컨 수(전체 거리 합)를 계산합니다.`,
+        dist: null, current: null, kevinScores: [], startNode: null, visitedEdges: [],
+      });
+
+      for (let start = 0; start < N_NODES; start++) {
+        const dist = new Array(N_NODES).fill(-1);
+        dist[start] = 0;
+        const queue = [start];
+        const visitedEdges = [];
+
+        steps.push({
+          codeLine: 12,
+          desc: `노드 ${start+1}에서 BFS 시작. dist[${start+1}] = 0`,
+          dist: [...dist], current: start, kevinScores: [...kevinScores], startNode: start, visitedEdges: [...visitedEdges],
+        });
+
+        let qi = 0;
+        while (qi < queue.length) {
+          const u = queue[qi++];
+          steps.push({
+            codeLine: 18,
+            desc: `노드 ${u+1} 처리 중 (거리=${dist[u]}).`,
+            dist: [...dist], current: u, kevinScores: [...kevinScores], startNode: start, visitedEdges: [...visitedEdges],
+          });
+
+          for (const v of ADJ[u]) {
+            if (dist[v] === -1) {
+              dist[v] = dist[u] + 1;
+              queue.push(v);
+              visitedEdges.push([u, v]);
+              steps.push({
+                codeLine: 21,
+                desc: `노드 ${v+1} 발견! 거리 = ${dist[v]}`,
+                dist: [...dist], current: u, checking: v, kevinScores: [...kevinScores], startNode: start, visitedEdges: [...visitedEdges],
+              });
+            }
+          }
+        }
+
+        const total = dist.reduce((a,b) => a + (b >= 0 ? b : 0), 0);
+        kevinScores.push(total);
+
+        steps.push({
+          codeLine: 24,
+          desc: `노드 ${start+1}의 케빈 베이컨 수 = ${dist.join(', ')} → 합계 = ${total}`,
+          dist: [...dist], current: null, kevinScores: [...kevinScores], startNode: start, visitedEdges: [...visitedEdges],
+        });
+      }
+
+      const minKB = Math.min(...kevinScores);
+      const answer = kevinScores.indexOf(minKB) + 1;
+      steps.push({
+        codeLine: 28,
+        desc: `케빈 베이컨 수: [${kevinScores.join(', ')}]. 최솟값 = ${minKB} → 정답: 노드 ${answer}`,
+        dist: null, current: null, kevinScores: [...kevinScores], startNode: null, visitedEdges: [], answer,
+      });
+
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps();
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const keywords = new Set(['from','import','for','in','if','while','def','return','range','not','and']);
+      const builtins = new Set(['int','input','map','deque','len','min','sum','print','append']);
+      const modules = new Set(['collections','deque']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (modules.has(token)) return <span key={i} className="text-green-300">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=','+','-','<','>','==','!=','>='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p + 1);
+        else setIsPlaying(false);
+      }, [currentStepIdx]);
+
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p - 1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+
+      useEffect(() => {
+        if (isPlaying) playIntervalRef.current = setInterval(handleNext, 900);
+        else clearInterval(playIntervalRef.current);
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      useEffect(() => {
+        if (codeViewerRef.current) {
+          const el = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, [currentStepIdx]);
+
+      const getNodeStyle = (i) => {
+        if (stepData.answer && stepData.answer === i + 1) return { fill: '#f59e0b', stroke: '#fcd34d', text: 'white' };
+        if (stepData.current === i) return { fill: '#2563eb', stroke: '#93c5fd', text: 'white' };
+        if (stepData.checking === i) return { fill: '#f97316', stroke: '#fed7aa', text: 'white' };
+        if (stepData.startNode === i) return { fill: '#7c3aed', stroke: '#c4b5fd', text: 'white' };
+        if (stepData.dist && stepData.dist[i] >= 0) return { fill: '#10b981', stroke: '#6ee7b7', text: 'white' };
+        return { fill: '#e2e8f0', stroke: '#94a3b8', text: '#64748b' };
+      };
+
+      const minScore = stepData.kevinScores.length > 0 ? Math.min(...stepData.kevinScores) : null;
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">BFS: 케빈 베이컨의 6단계 법칙</h1>
+              <p className="text-slate-600">
+                각 사람에서 BFS를 돌려 다른 모든 사람까지의 최단 거리 합(<b>케빈 베이컨 수</b>)을 구합니다.
+                이 수가 가장 작은 사람이 답입니다.
+              </p>
+            </header>
+
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4">그래프 BFS 현황</h2>
+                  <div className="flex justify-center mb-4">
+                    <svg width="460" height="300" className="rounded-lg bg-slate-50 border border-slate-200">
+                      {EDGES.map(([u,v], ei) => {
+                        const pu = NODE_POS[u], pv = NODE_POS[v];
+                        const isVisited = stepData.visitedEdges && stepData.visitedEdges.some(([a,b]) => (a===u&&b===v)||(a===v&&b===u));
+                        return <line key={ei} x1={pu.x} y1={pu.y} x2={pv.x} y2={pv.y} stroke={isVisited ? '#0ea5e9' : '#cbd5e1'} strokeWidth={isVisited ? 2.5 : 2}/>;
+                      })}
+                      {Array.from({length: N_NODES}, (_, i) => {
+                        const s = getNodeStyle(i);
+                        const pos = NODE_POS[i];
+                        const d = stepData.dist ? stepData.dist[i] : null;
+                        return (
+                          <g key={i}>
+                            <circle cx={pos.x} cy={pos.y} r="24" fill={s.fill} stroke={s.stroke} strokeWidth="2.5" style={{transition:'fill 0.3s'}}/>
+                            <text x={pos.x} y={pos.y - 5} textAnchor="middle" dominantBaseline="middle" fill={s.text} fontWeight="bold" fontSize="14">{i+1}</text>
+                            {d !== null && d >= 0 && (
+                              <text x={pos.x} y={pos.y + 10} textAnchor="middle" fill={s.text} fontSize="10">d={d}</text>
+                            )}
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* 케빈 베이컨 점수 테이블 */}
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="text-xs text-slate-500 mb-2">케빈 베이컨 수</div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {Array.from({length: N_NODES}, (_, i) => {
+                        const score = stepData.kevinScores[i];
+                        const isMin = score !== undefined && score === minScore;
+                        const isCurrent = stepData.startNode === i && score === undefined;
+                        return (
+                          <div key={i} className={`text-center p-2 rounded-lg border transition-all ${isMin ? 'bg-amber-100 border-amber-400 text-amber-700 font-bold' : score !== undefined ? 'bg-slate-50 border-slate-200 text-slate-600' : isCurrent ? 'bg-blue-50 border-blue-300 text-blue-600' : 'bg-slate-50 border-slate-200 text-slate-300'}`}>
+                            <div className="text-xs text-slate-400">노드{i+1}</div>
+                            <div className="font-mono font-bold">{score !== undefined ? score : '?'}</div>
+                            {isMin && <div className="text-xs text-amber-500">최소!</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden" style={{ minHeight: '500px' }}>
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (
+                        <div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}>
+                          <span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
