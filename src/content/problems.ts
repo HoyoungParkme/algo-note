@@ -227,6 +227,7 @@ for i in range(N):
     category: '자료 구조',
     difficulty: 'Gold IV',
     url: 'https://www.acmicpc.net/problem/1715',
+    htmlFile: 'problems/boj-1715.html',
     description: '자료 구조, 그리디 알고리즘, 우선순위 큐',
     code: `from queue import PriorityQueue
 
@@ -463,6 +464,7 @@ print(max_num)`,
     category: '그리디 알고리즘',
     difficulty: 'Silver I',
     url: 'https://www.acmicpc.net/problem/1946',
+    htmlFile: 'problems/boj-1946.html',
     description: '그리디 알고리즘, 정렬',
     code: `import sys
 
@@ -1071,6 +1073,7 @@ print(dp[N])`,
     category: '구현',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/1158',
+    htmlFile: 'problems/boj-1158.html',
     description: '구현, 자료 구조, 큐',
     code: `from collections import deque
 N, K = map(int, input().split())
@@ -1124,6 +1127,7 @@ print(answer)`,
     category: '자료 구조',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/2164',
+    htmlFile: 'problems/boj-2164.html',
     description: '자료 구조, 큐',
     code: `import sys
 from collections import deque
@@ -1194,6 +1198,7 @@ print(answer)`,
     category: '그리디 알고리즘',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/2847',
+    htmlFile: 'problems/boj-2847.html',
     description: '그리디 알고리즘',
     code: `N = int(input())
 level = [int(input()) for _ in range(N)]
@@ -1214,6 +1219,7 @@ print(answer)`,
     category: '자료 구조',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/4949',
+    htmlFile: 'problems/boj-4949.html',
     description: '자료 구조, 문자열, 스택',
     code: `left = []
 
@@ -1260,6 +1266,7 @@ while True:
     category: '구현',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/10773',
+    htmlFile: 'problems/boj-10773.html',
     description: '구현, 자료 구조, 스택',
     code: `cnt = int(input())
 money = []
@@ -1280,6 +1287,7 @@ print(sum(money))`,
     category: '그리디 알고리즘',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/11399',
+    htmlFile: 'problems/boj-11399.html',
     description: '그리디 알고리즘, 정렬',
     code: `N = int(input())
 waiting = list(map(int, input().split()))
@@ -1298,6 +1306,7 @@ print(answer)`,
     category: '자료 구조',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/18258',
+    htmlFile: 'problems/boj-18258.html',
     description: '자료 구조, 큐',
     code: `import sys
 from collections import deque
@@ -1387,6 +1396,7 @@ else:
     category: '구현',
     difficulty: 'Silver V',
     url: 'https://www.acmicpc.net/problem/1417',
+    htmlFile: 'problems/boj-1417.html',
     description: '구현, 자료 구조, 그리디 알고리즘, 시뮬레이션, 우선순위 큐',
     code: `from collections import deque
 
