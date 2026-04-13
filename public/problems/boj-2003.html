@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>투 포인터: 수들의 합 2 - 백준 2003</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const PYTHON_CODE = [
+      "N, M = map(int, input().split())",
+      "pocket = list(map(int, input().split()))",
+      "",
+      "left = 0",
+      "right = 0",
+      "pocket_sum = 0",
+      "answer = 0",
+      "",
+      "while True:",
+      "    if pocket_sum >= M:",
+      "        if pocket_sum == M:",
+      "            answer += 1",
+      "        pocket_sum -= pocket[left]",
+      "        left += 1",
+      "    elif right == N:",
+      "        break",
+      "    else:",
+      "        pocket_sum += pocket[right]",
+      "        right += 1",
+      "",
+      "print(answer)"
+    ];
+    const POCKET = [1, 2, 3, 4, 2, 5, 3, 1, 1, 2];
+    const M = 5;
+    const generateSimulationSteps = (arr, m) => {
+      const steps = [];
+      const N = arr.length;
+      let left = 0, right = 0, psum = 0, answer = 0;
+      steps.push({ codeLine: 3, desc: `배열: [${arr.join(', ')}]. 부분합 = ${m}인 구간 수를 찾습니다.`, left, right, psum, answer, found: false });
+      let safety = 0;
+      while (safety++ < 100) {
+        if (psum >= m) {
+          const found = psum === m;
+          if (found) answer++;
+          steps.push({ codeLine: found ? 10 : 9, desc: found ? `합 ${psum} == ${m}! answer=${answer}. left를 오른쪽으로 이동합니다.` : `합 ${psum} >= ${m}. left를 오른쪽으로 이동합니다.`, left, right, psum, answer, found });
+          psum -= arr[left];
+          left++;
+          steps.push({ codeLine: 12, desc: `pocket[${left-1}]=${arr[left-1]} 제거. left=${left}, 현재 합=${psum}`, left, right, psum, answer, found: false });
+        } else if (right === N) {
+          steps.push({ codeLine: 14, desc: `right가 배열 끝에 도달. 탐색 종료.`, left, right, psum, answer, found: false });
+          break;
+        } else {
+          psum += arr[right];
+          right++;
+          steps.push({ codeLine: 17, desc: `pocket[${right-1}]=${arr[right-1]} 추가. right=${right}, 현재 합=${psum}`, left, right, psum, answer, found: false });
+        }
+      }
+      steps.push({ codeLine: 20, desc: `완료. 합이 ${m}인 부분 구간 수 = ${answer}`, left, right, psum, answer, found: false });
+      return steps;
+    };
+    const STEPS = generateSimulationSteps(POCKET, M);
+    const highlightLine = (line) => {
+      const ci = line.indexOf('#'); let cp = line, cm = '';
+      if (ci !== -1) { cp = line.slice(0,ci); cm = line.slice(ci); }
+      if (!cp.trim() && cm) return <span className="text-slate-500 italic">{cm}</span>;
+      const tokens = cp.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const kw = new Set(['while','if','elif','else','break','True']);
+      const bi = new Set(['int','input','list','map','print']);
+      const mt = new Set(['split']);
+      const ht = tokens.map((t,i) => {
+        if (kw.has(t)) return <span key={i} className="text-pink-400 font-semibold">{t}</span>;
+        if (bi.has(t)) return <span key={i} className="text-cyan-400">{t}</span>;
+        if (mt.has(t)) return <span key={i} className="text-yellow-200">{t}</span>;
+        if (!isNaN(t) && t.trim() !== '') return <span key={i} className="text-orange-300">{t}</span>;
+        if (['=','+','-','<','>','==','!='].includes(t)) return <span key={i} className="text-pink-400">{t}</span>;
+        return <span key={i} className="text-slate-200">{t}</span>;
+      });
+      return <>{ht}{cm && <span className="text-slate-500 italic">{cm}</span>}</>;
+    };
+    function App() {
+      const [idx, setIdx] = useState(0);
+      const [playing, setPlaying] = useState(false);
+      const ref = useRef(null); const cvRef = useRef(null);
+      const s = STEPS[idx]; const isEnd = idx === STEPS.length - 1;
+      const next = useCallback(() => { if (idx < STEPS.length-1) setIdx(p=>p+1); else setPlaying(false); }, [idx]);
+      const prev = () => { if (idx > 0) { setIdx(p=>p-1); setPlaying(false); } };
+      const reset = () => { setIdx(0); setPlaying(false); };
+      const toggle = () => { if (isEnd) reset(); setPlaying(!playing); };
+      useEffect(() => { if (playing) ref.current = setInterval(next,800); else clearInterval(ref.current); return ()=>clearInterval(ref.current); }, [playing,next]);
+      useEffect(() => { if (cvRef.current && s.codeLine !== null) { const el = cvRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({behavior:'smooth',block:'center'}); } }, [idx]);
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">투 포인터: 수들의 합 2 시각화</h1>
+              <p className="text-slate-600">두 포인터 <b>left, right</b>를 사용하여 연속 부분합이 M인 구간을 찾습니다. 합이 M 이상이면 left를 오른쪽으로, 미만이면 right를 오른쪽으로 이동합니다.</p>
+            </header>
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700 flex flex-col justify-center">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{s.desc}</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">배열 & 윈도우</h2>
+                    <div className="flex space-x-3 text-xs text-slate-500">
+                      <div className="flex items-center"><span className="w-3 h-3 bg-blue-400 rounded-sm mr-1"></span> 윈도우</div>
+                      <div className="flex items-center"><span className="w-3 h-3 bg-emerald-500 rounded-sm mr-1"></span> 합 == M</div>
+                    </div>
+                  </div>
+                  <div className="flex space-x-1 mb-2">
+                    {POCKET.map((v, i) => {
+                      const inWindow = i >= s.left && i < s.right;
+                      const isFound = s.found && inWindow;
+                      return (
+                        <div key={i} className={`w-10 h-10 flex items-center justify-center rounded font-bold text-sm border-2 ${
+                          isFound ? 'bg-emerald-500 border-emerald-700 text-white scale-110 shadow-lg' :
+                          inWindow ? 'bg-blue-400 border-blue-600 text-white' :
+                          'bg-slate-100 border-slate-200 text-slate-600'
+                        }`} style={{transition:'all 0.3s'}}>{v}</div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex space-x-1 mb-6">
+                    {POCKET.map((_, i) => (
+                      <div key={i} className="w-10 text-center text-xs font-mono">
+                        {i === s.left && <span className="text-red-600 font-bold">L</span>}
+                        {i === s.right && <span className="text-blue-600 font-bold">R</span>}
+                        {i === s.left && i === s.right && <span className="text-purple-600 font-bold">LR</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2 mt-auto">
+                    <div className="flex justify-between text-sm"><span className="text-slate-600">left / right</span><span className="font-bold font-mono">{s.left} / {s.right}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-slate-600">현재 합 / 목표</span><span className={`font-bold ${s.psum === M ? 'text-emerald-600' : 'text-slate-800'}`}>{s.psum} / {M}</span></div>
+                    <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-md shadow-sm">
+                      <span className="font-semibold text-sm">찾은 구간 수</span>
+                      <span className="text-2xl font-bold text-emerald-400">{s.answer}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={prev} disabled={idx===0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={toggle} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{playing?(<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>):(<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={next} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={reset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {idx+1} / {STEPS.length}</div>
+                </div>
+              </div>
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={cvRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{scrollBehavior:'smooth'}}>
+                    {PYTHON_CODE.map((line,i) => {
+                      const active = s.codeLine === i;
+                      return (<div key={i} data-active={active?'true':'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${active?'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner':'border-l-2 border-transparent'}`}><span style={{whiteSpace:'pre'}}>{line ? highlightLine(line) : ' '}</span></div>);
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

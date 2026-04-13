@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>투 포인터: 먹을 것인가 먹힐 것인가 - 백준 7795</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const PYTHON_CODE = [
+      "a = list(map(int, input().split()))",
+      "b = list(map(int, input().split()))",
+      "",
+      "# 정렬하면 투 포인터 적용 가능",
+      "a.sort()",
+      "b.sort()",
+      "",
+      "cnt, start_a, start_b = 0, 0, 0",
+      "",
+      "while start_a < len(a):",
+      "    if start_b == len(b):",
+      "        # B를 다 봤으면, 남은 A원소도 start_b개 먹을 수 있음",
+      "        cnt += start_b",
+      "        start_a += 1",
+      "    else:",
+      "        if a[start_a] > b[start_b]:",
+      "            # A가 더 크면 B 포인터 전진",
+      "            start_b += 1",
+      "        else:",
+      "            # A가 작거나 같으면, start_b개 먹을 수 있음",
+      "            cnt += start_b",
+      "            start_a += 1",
+      "",
+      "print(cnt)"
+    ];
+    const INIT_A = [2, 1, 7, 3];
+    const INIT_B = [3, 5, 1];
+    const generateSimulationSteps = (rawA, rawB) => {
+      const steps = [];
+      const a = [...rawA].sort((x,y)=>x-y);
+      const b = [...rawB].sort((x,y)=>x-y);
+      let cnt = 0, sa = 0, sb = 0;
+      steps.push({ codeLine: 0, desc: `A=[${rawA.join(',')}] → 정렬: [${a.join(',')}]. B=[${rawB.join(',')}] → 정렬: [${b.join(',')}]`, a, b, sa: 0, sb: 0, cnt: 0, action: null });
+      steps.push({ codeLine: 7, desc: `두 포인터 초기화. A의 각 원소에 대해 B에서 먹을 수 있는(더 작은) 수를 셉니다.`, a, b, sa, sb, cnt, action: null });
+      let safety = 0;
+      while (sa < a.length && safety++ < 50) {
+        if (sb === b.length) {
+          cnt += sb;
+          steps.push({ codeLine: 10, desc: `B 포인터 끝 도달. A[${sa}]=${a[sa]}은 B에서 ${sb}개를 먹을 수 있음. cnt=${cnt}`, a, b, sa: sa+1, sb, cnt, action: 'countAll' });
+          sa++;
+        } else if (a[sa] > b[sb]) {
+          steps.push({ codeLine: 15, desc: `A[${sa}]=${a[sa]} > B[${sb}]=${b[sb]}. A가 더 크므로 B 포인터를 전진합니다.`, a, b, sa, sb: sb+1, cnt, action: 'advance' });
+          sb++;
+        } else {
+          cnt += sb;
+          steps.push({ codeLine: 18, desc: `A[${sa}]=${a[sa]} <= B[${sb}]=${b[sb]}. A[${sa}]는 B에서 ${sb}개를 먹을 수 있음. cnt=${cnt}`, a, b, sa: sa+1, sb, cnt, action: 'count' });
+          sa++;
+        }
+      }
+      steps.push({ codeLine: 23, desc: `완료. A가 B를 먹을 수 있는 쌍의 수 = ${cnt}`, a, b, sa, sb, cnt, action: 'done' });
+      return steps;
+    };
+    const STEPS = generateSimulationSteps(INIT_A, INIT_B);
+    const highlightLine = (line) => {
+      const ci = line.indexOf('#'); let cp = line, cm = '';
+      if (ci !== -1) { cp = line.slice(0,ci); cm = line.slice(ci); }
+      if (!cp.trim() && cm) return <span className="text-slate-500 italic">{cm}</span>;
+      const tokens = cp.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const kw = new Set(['while','if','else','import']);
+      const bi = new Set(['int','input','list','map','len','print','sorted']);
+      const mt = new Set(['split','sort']);
+      const ht = tokens.map((t,i) => {
+        if (kw.has(t)) return <span key={i} className="text-pink-400 font-semibold">{t}</span>;
+        if (bi.has(t)) return <span key={i} className="text-cyan-400">{t}</span>;
+        if (mt.has(t)) return <span key={i} className="text-yellow-200">{t}</span>;
+        if (!isNaN(t) && t.trim() !== '') return <span key={i} className="text-orange-300">{t}</span>;
+        if (['=','+','-','<','>','==','!='].includes(t)) return <span key={i} className="text-pink-400">{t}</span>;
+        return <span key={i} className="text-slate-200">{t}</span>;
+      });
+      return <>{ht}{cm && <span className="text-slate-500 italic">{cm}</span>}</>;
+    };
+    function App() {
+      const [idx, setIdx] = useState(0);
+      const [playing, setPlaying] = useState(false);
+      const ref = useRef(null); const cvRef = useRef(null);
+      const s = STEPS[idx]; const isEnd = idx === STEPS.length - 1;
+      const next = useCallback(() => { if (idx < STEPS.length-1) setIdx(p=>p+1); else setPlaying(false); }, [idx]);
+      const prev = () => { if (idx > 0) { setIdx(p=>p-1); setPlaying(false); } };
+      const reset = () => { setIdx(0); setPlaying(false); };
+      const toggle = () => { if (isEnd) reset(); setPlaying(!playing); };
+      useEffect(() => { if (playing) ref.current = setInterval(next,1200); else clearInterval(ref.current); return ()=>clearInterval(ref.current); }, [playing,next]);
+      useEffect(() => { if (cvRef.current && s.codeLine !== null) { const el = cvRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({behavior:'smooth',block:'center'}); } }, [idx]);
+
+      const renderArr = (arr, ptr, label, activeColor) => (
+        <div className="mb-3">
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">{label}</h3>
+          <div className="flex space-x-1">
+            {arr.map((v, i) => (
+              <div key={i} className={`w-12 h-12 flex items-center justify-center rounded-lg font-bold text-sm border-2 ${
+                i === ptr ? `${activeColor} text-white scale-110 shadow-lg` :
+                i < ptr ? 'bg-slate-100 border-slate-200 text-slate-300' :
+                'bg-white border-slate-200 text-slate-700'
+              }`} style={{transition:'all 0.3s'}}>{v}</div>
+            ))}
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">투 포인터: 먹을 것인가 먹힐 것인가</h1>
+              <p className="text-slate-600">두 집합 A, B를 정렬한 뒤, A의 각 원소에 대해 B에서 <b>더 작은 원소의 개수</b>를 투 포인터로 셉니다. A 포인터가 전진할 때 B 포인터는 리셋하지 않아도 됩니다.</p>
+            </header>
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700 flex flex-col justify-center">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{s.desc}</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">배열 상태</h2>
+                  </div>
+                  {renderArr(s.a, s.sa, 'A (먹는 쪽)', 'bg-blue-500 border-blue-700')}
+                  {renderArr(s.b, s.sb, 'B (먹히는 쪽)', 'bg-orange-500 border-orange-700')}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2 mt-auto">
+                    <div className="flex justify-between text-sm"><span className="text-slate-600">A 포인터 / B 포인터</span><span className="font-bold font-mono">{s.sa} / {s.sb}</span></div>
+                    <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-md shadow-sm">
+                      <span className="font-semibold text-sm">먹을 수 있는 쌍</span>
+                      <span className="text-2xl font-bold text-emerald-400">{s.cnt}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={prev} disabled={idx===0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={toggle} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{playing?(<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>):(<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={next} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={reset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {idx+1} / {STEPS.length}</div>
+                </div>
+              </div>
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={cvRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{scrollBehavior:'smooth'}}>
+                    {PYTHON_CODE.map((line,i) => {
+                      const active = s.codeLine === i;
+                      return (<div key={i} data-active={active?'true':'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${active?'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner':'border-l-2 border-transparent'}`}><span style={{whiteSpace:'pre'}}>{line ? highlightLine(line) : ' '}</span></div>);
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -336,6 +336,7 @@ print(*total)`,
     category: '이분 탐색',
     difficulty: 'Gold V',
     url: 'https://www.acmicpc.net/problem/2343',
+    htmlFile: 'problems/boj-2343.html',
     description: '이분 탐색, 매개 변수 탐색',
     code: `n = list(map(int, input().split()))
 play = list(map(int, input().split()))
@@ -670,6 +671,7 @@ print(cnt)`,
     category: '이분 탐색',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/2512',
+    htmlFile: 'problems/boj-2512.html',
     description: '이분 탐색, 매개 변수 탐색',
     code: `num = int(input())
 local = list(map(int, input().split()))
@@ -705,6 +707,7 @@ print(answer)`,
     category: '이분 탐색',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/2805',
+    htmlFile: 'problems/boj-2805.html',
     description: '이분 탐색, 매개 변수 탐색',
     code: `N, M = list(map(int, input().split()))
 tree = list(map(int, input().split()))
@@ -870,6 +873,7 @@ for i in range(1, N):
     category: '누적 합',
     difficulty: 'Silver II',
     url: 'https://www.acmicpc.net/problem/14465',
+    htmlFile: 'problems/boj-14465.html',
     description: '누적 합, 슬라이딩 윈도우',
     code: `N, K, B = map(int, input().split())
 broken = []
@@ -998,6 +1002,7 @@ print(cnt - 1)`,
     category: '정렬',
     difficulty: 'Silver III',
     url: 'https://www.acmicpc.net/problem/7795',
+    htmlFile: 'problems/boj-7795.html',
     description: '정렬, 이분 탐색, 두 포인터',
     code: `import sys
 
@@ -1097,6 +1102,7 @@ print('<' + ', '.join(map(str, answer)) + '>')`,
     category: '브루트포스 알고리즘',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/2003',
+    htmlFile: 'problems/boj-2003.html',
     description: '브루트포스 알고리즘, 누적 합, 두 포인터',
     code: `N, M = map(int, input().split())
 pocket = list(map(int, input().split()))
@@ -1175,6 +1181,7 @@ print(max_weight)`,
     category: '수학',
     difficulty: 'Silver IV',
     url: 'https://www.acmicpc.net/problem/2417',
+    htmlFile: 'problems/boj-2417.html',
     description: '수학, 이분 탐색',
     code: `N = int(input())
 
@@ -1429,6 +1436,7 @@ print(answer)`,
     category: '정렬',
     difficulty: 'Silver V',
     url: 'https://www.acmicpc.net/problem/11728',
+    htmlFile: 'problems/boj-11728.html',
     description: '정렬, 두 포인터',
     code: `from collections import deque
 

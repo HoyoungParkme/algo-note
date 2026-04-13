@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이분 탐색: 나무 자르기 - 백준 2805</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const PYTHON_CODE = [
+      "N, M = list(map(int, input().split()))",
+      "tree = list(map(int, input().split()))",
+      "",
+      "lo, hi = 0, max(tree)",
+      "",
+      "def check(n):",
+      "    tmp = 0",
+      "    for i in tree:",
+      "        if i > n:",
+      "            tmp += (i - n)  # 잘린 부분",
+      "    return tmp >= M",
+      "",
+      "answer = 0",
+      "while lo <= hi:",
+      "    mid = (lo + hi) // 2",
+      "",
+      "    if check(mid):        # M 이상 얻을 수 있으면",
+      "        answer = mid",
+      "        lo = mid + 1      # 더 높이 시도",
+      "    else:",
+      "        hi = mid - 1      # 낮춰야 함",
+      "",
+      "print(answer)"
+    ];
+
+    const INITIAL_TREES = [20, 15, 10, 17];
+    const INITIAL_M = 7;
+
+    const generateSimulationSteps = (trees, M) => {
+      const steps = [];
+      let lo = 0, hi = Math.max(...trees), answer = 0;
+
+      steps.push({ codeLine: 0, desc: `나무 높이: [${trees.join(', ')}]. 최소 ${M}m를 얻어야 합니다.`, lo, hi, mid: null, collected: null, answer, trees: trees.map(t => ({ h: t, cut: 0 })) });
+      steps.push({ codeLine: 3, desc: `절단 높이 탐색 범위: lo=0, hi=${hi}`, lo, hi, mid: null, collected: null, answer, trees: trees.map(t => ({ h: t, cut: 0 })) });
+
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        let collected = 0;
+        const cuts = trees.map(t => {
+          const c = t > mid ? t - mid : 0;
+          collected += c;
+          return { h: t, cut: c };
+        });
+
+        steps.push({ codeLine: 14, desc: `mid = ${mid}. 절단 높이를 ${mid}m로 설정하면 얻는 나무 = ${collected}m`, lo, hi, mid, collected, answer, trees: cuts });
+
+        if (collected >= INITIAL_M) {
+          answer = mid;
+          steps.push({ codeLine: 16, desc: `${collected}m >= ${M}m. 충분! answer=${mid}, 더 높이 시도. lo=${mid+1}`, lo: mid + 1, hi, mid, collected, answer, trees: cuts });
+          lo = mid + 1;
+        } else {
+          steps.push({ codeLine: 19, desc: `${collected}m < ${M}m. 부족! 더 낮게 잘라야 합니다. hi=${mid-1}`, lo, hi: mid - 1, mid, collected, answer, trees: cuts });
+          hi = mid - 1;
+        }
+      }
+
+      steps.push({ codeLine: 22, desc: `탐색 종료. 최대 절단 높이 = ${answer}m`, lo, hi, mid: null, collected: null, answer, trees: trees.map(t => ({ h: t, cut: t > answer ? t - answer : 0 })) });
+      return steps;
+    };
+
+    const STEPS = generateSimulationSteps(INITIAL_TREES, INITIAL_M);
+
+    const highlightLine = (line) => {
+      const commentIdx = line.indexOf('#');
+      let codePart = line, commentPart = '';
+      if (commentIdx !== -1) { codePart = line.slice(0, commentIdx); commentPart = line.slice(commentIdx); }
+      if (!codePart.trim() && commentPart) return <span className="text-slate-500 italic">{commentPart}</span>;
+      const tokens = codePart.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\/\/|\.)/g);
+      const keywords = new Set(['def', 'return', 'while', 'for', 'in', 'if', 'else']);
+      const builtins = new Set(['int', 'input', 'list', 'map', 'max', 'print']);
+      const methods = new Set(['split']);
+      const constants = new Set(['True', 'False']);
+      const highlightedTokens = tokens.map((token, i) => {
+        if (keywords.has(token)) return <span key={i} className="text-pink-400 font-semibold">{token}</span>;
+        if (builtins.has(token)) return <span key={i} className="text-cyan-400">{token}</span>;
+        if (methods.has(token)) return <span key={i} className="text-yellow-200">{token}</span>;
+        if (constants.has(token)) return <span key={i} className="text-purple-400">{token}</span>;
+        if (!isNaN(token) && token.trim() !== '') return <span key={i} className="text-orange-300">{token}</span>;
+        if (['=','+','-','<','>','==','!=','*','//','>='].includes(token)) return <span key={i} className="text-pink-400">{token}</span>;
+        return <span key={i} className="text-slate-200">{token}</span>;
+      });
+      return <>{highlightedTokens}{commentPart && <span className="text-slate-500 italic">{commentPart}</span>}</>;
+    };
+
+    function App() {
+      const [currentStepIdx, setCurrentStepIdx] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+      const codeViewerRef = useRef(null);
+      const stepData = STEPS[currentStepIdx];
+      const isEnd = currentStepIdx === STEPS.length - 1;
+      const handleNext = useCallback(() => { if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p+1); else setIsPlaying(false); }, [currentStepIdx]);
+      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p-1); setIsPlaying(false); } };
+      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
+      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
+      useEffect(() => { if (isPlaying) playIntervalRef.current = setInterval(handleNext, 1500); else clearInterval(playIntervalRef.current); return () => clearInterval(playIntervalRef.current); }, [isPlaying, handleNext]);
+      useEffect(() => { if (codeViewerRef.current && stepData.codeLine !== null) { const el = codeViewerRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, [currentStepIdx]);
+
+      const maxH = Math.max(...INITIAL_TREES);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">이분 탐색: 나무 자르기 시각화</h1>
+              <p className="text-slate-600">절단기 높이를 H로 설정하면, H보다 높은 나무는 윗부분이 잘립니다. 잘린 나무의 총 길이가 M 이상이 되는 <b>최대 H</b>를 이분 탐색으로 찾습니다.</p>
+            </header>
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700 flex flex-col justify-center">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{stepData.desc}</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-lg font-semibold text-slate-800">나무 & 절단선</h2>
+                    <div className="flex space-x-3 text-xs text-slate-500">
+                      <div className="flex items-center"><span className="w-3 h-3 bg-emerald-600 rounded-sm mr-1"></span> 남는 부분</div>
+                      <div className="flex items-center"><span className="w-3 h-3 bg-orange-400 rounded-sm mr-1"></span> 잘린 부분</div>
+                    </div>
+                  </div>
+                  <div className="flex items-end justify-center h-48 border-b-2 border-slate-300 pb-1 mb-4 space-x-6 relative">
+                    {stepData.mid !== null && (
+                      <div className="absolute left-0 right-0 border-t-2 border-dashed border-red-500" style={{ bottom: `${(stepData.mid / maxH) * 100}%` }}>
+                        <span className="absolute -top-5 right-0 text-xs text-red-600 font-bold bg-white px-1">H = {stepData.mid}</span>
+                      </div>
+                    )}
+                    {stepData.trees.map((t, idx) => {
+                      const totalPct = (t.h / maxH) * 100;
+                      const keepPct = stepData.mid !== null ? (Math.min(t.h, stepData.mid) / maxH) * 100 : totalPct;
+                      const cutPct = totalPct - keepPct;
+                      return (
+                        <div key={idx} className="flex flex-col items-center w-14">
+                          <div className="w-10 flex flex-col-reverse rounded-t-sm overflow-hidden" style={{ height: `${totalPct}%` }}>
+                            <div className="bg-emerald-600" style={{ height: `${keepPct / totalPct * 100}%`, transition: 'all 0.3s' }}></div>
+                            {cutPct > 0 && <div className="bg-orange-400" style={{ height: `${cutPct / totalPct * 100}%`, transition: 'all 0.3s' }}></div>}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-1 font-mono">{t.h}m</div>
+                          {t.cut > 0 && <div className="text-xs text-orange-600 font-bold">+{t.cut}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">lo / hi</span>
+                      <span className="font-bold font-mono">{stepData.lo} / {stepData.hi}</span>
+                    </div>
+                    {stepData.collected !== null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">수집량 / 필요량</span>
+                        <span className={`font-bold ${stepData.collected >= INITIAL_M ? 'text-emerald-600' : 'text-red-600'}`}>{stepData.collected}m / {INITIAL_M}m</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-md shadow-sm">
+                      <span className="font-semibold text-sm">최대 절단 높이</span>
+                      <span className="text-2xl font-bold text-emerald-400">{stepData.answer}m</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handlePrev} disabled={currentStepIdx === 0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={togglePlay} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{isPlaying ? (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> 일시정지</>) : (<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg> 자동 재생</>)}</button>
+                    <button onClick={handleNext} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={handleReset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer" title="초기화"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {currentStepIdx + 1} / {STEPS.length}</div>
+                </div>
+              </div>
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={codeViewerRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{ scrollBehavior: 'smooth' }}>
+                    {PYTHON_CODE.map((line, idx) => {
+                      const isActive = stepData.codeLine === idx;
+                      return (<div key={idx} data-active={isActive ? 'true' : 'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${isActive ? 'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner' : 'border-l-2 border-transparent'}`}><span style={{ whiteSpace: 'pre' }}>{line ? highlightLine(line) : ' '}</span></div>);
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

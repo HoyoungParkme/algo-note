@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>슬라이딩 윈도우: 소가 길을 건너간 이유 5 - 백준 14465</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const PYTHON_CODE = [
+      "N, K, B = map(int, input().split())",
+      "broken = []",
+      "for i in range(B):",
+      "    broken.append(int(input()))",
+      "",
+      "# 고장난 신호등 표시 (1=고장, 0=정상)",
+      "tmp = [0] * N",
+      "for i in broken:",
+      "    tmp[i-1] = 1",
+      "",
+      "# 누적합 계산",
+      "p = [0] * N",
+      "p[0] = tmp[0]",
+      "for i in range(1, N):",
+      "    p[i] = p[i-1] + tmp[i]",
+      "",
+      "# K 크기 윈도우에서 고장 수 최솟값",
+      "answer = p[K-1]",
+      "for i in range(K, N):",
+      "    answer = min(answer, p[i] - p[i-K])",
+      "",
+      "print(answer)"
+    ];
+    const N = 10, K = 3, BROKEN = [2, 5, 9];
+    const generateSimulationSteps = () => {
+      const steps = [];
+      const tmp = Array(N).fill(0);
+      BROKEN.forEach(b => tmp[b-1] = 1);
+      steps.push({ codeLine: 6, desc: `${N}개 신호등 중 ${BROKEN.length}개 고장: 위치 ${BROKEN.join(', ')}. K=${K} 연속 구간에서 최소 수리 횟수를 찾습니다.`, lights: [...tmp], windowStart: -1, windowBroken: null, answer: null, prefix: [] });
+
+      const p = Array(N).fill(0);
+      p[0] = tmp[0];
+      for (let i = 1; i < N; i++) p[i] = p[i-1] + tmp[i];
+      steps.push({ codeLine: 11, desc: `누적합 배열 계산 완료: [${p.join(', ')}]`, lights: [...tmp], windowStart: -1, windowBroken: null, answer: null, prefix: [...p] });
+
+      let answer = p[K-1];
+      steps.push({ codeLine: 17, desc: `첫 윈도우 [0, ${K-1}]: 고장 수 = ${answer}`, lights: [...tmp], windowStart: 0, windowBroken: answer, answer, prefix: [...p] });
+
+      for (let i = K; i < N; i++) {
+        const broken = p[i] - p[i-K];
+        const prevAns = answer;
+        answer = Math.min(answer, broken);
+        steps.push({ codeLine: 19, desc: `윈도우 [${i-K+1}, ${i}]: 고장 수 = ${broken}. 최솟값 = min(${prevAns}, ${broken}) = ${answer}`, lights: [...tmp], windowStart: i-K+1, windowBroken: broken, answer, prefix: [...p] });
+      }
+
+      steps.push({ codeLine: 21, desc: `탐색 완료. 최소 수리 횟수 = ${answer}`, lights: [...tmp], windowStart: -1, windowBroken: null, answer, prefix: [...p] });
+      return steps;
+    };
+    const STEPS = generateSimulationSteps();
+    const highlightLine = (line) => {
+      const ci = line.indexOf('#'); let cp = line, cm = '';
+      if (ci !== -1) { cp = line.slice(0,ci); cm = line.slice(ci); }
+      if (!cp.trim() && cm) return <span className="text-slate-500 italic">{cm}</span>;
+      const tokens = cp.split(/(\s+|\[|\]|\(|\)|:|,|==|=|!=|\+|-|<|>|\*|\.)/g);
+      const kw = new Set(['for','in','if']);
+      const bi = new Set(['int','input','range','min','print']);
+      const mt = new Set(['split','append']);
+      const ht = tokens.map((t,i) => {
+        if (kw.has(t)) return <span key={i} className="text-pink-400 font-semibold">{t}</span>;
+        if (bi.has(t)) return <span key={i} className="text-cyan-400">{t}</span>;
+        if (mt.has(t)) return <span key={i} className="text-yellow-200">{t}</span>;
+        if (!isNaN(t) && t.trim() !== '') return <span key={i} className="text-orange-300">{t}</span>;
+        if (['=','+','-','<','>','==','!='].includes(t)) return <span key={i} className="text-pink-400">{t}</span>;
+        return <span key={i} className="text-slate-200">{t}</span>;
+      });
+      return <>{ht}{cm && <span className="text-slate-500 italic">{cm}</span>}</>;
+    };
+    function App() {
+      const [idx, setIdx] = useState(0);
+      const [playing, setPlaying] = useState(false);
+      const ref = useRef(null); const cvRef = useRef(null);
+      const s = STEPS[idx]; const isEnd = idx === STEPS.length - 1;
+      const next = useCallback(() => { if (idx < STEPS.length-1) setIdx(p=>p+1); else setPlaying(false); }, [idx]);
+      const prev = () => { if (idx > 0) { setIdx(p=>p-1); setPlaying(false); } };
+      const reset = () => { setIdx(0); setPlaying(false); };
+      const toggle = () => { if (isEnd) reset(); setPlaying(!playing); };
+      useEffect(() => { if (playing) ref.current = setInterval(next,1200); else clearInterval(ref.current); return ()=>clearInterval(ref.current); }, [playing,next]);
+      useEffect(() => { if (cvRef.current && s.codeLine !== null) { const el = cvRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({behavior:'smooth',block:'center'}); } }, [idx]);
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <header className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">슬라이딩 윈도우: 소가 길을 건너간 이유 5</h1>
+              <p className="text-slate-600">N개의 신호등 중 K개 연속 구간에서 <b>고장난 신호등 수가 최소</b>인 구간을 찾습니다. 누적합 + 슬라이딩 윈도우로 O(N)에 해결합니다.</p>
+            </header>
+            <div className="bg-blue-600 text-white p-5 rounded-xl shadow-sm border border-blue-700 flex flex-col justify-center">
+              <h3 className="text-xs font-bold text-blue-200 mb-2 uppercase tracking-wider">현재 단계 동작</h3>
+              <p className="text-lg font-medium leading-relaxed">{s.desc}</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              <div className="flex flex-col space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">신호등 상태</h2>
+                    <div className="flex space-x-3 text-xs text-slate-500">
+                      <div className="flex items-center"><span className="w-3 h-3 bg-emerald-500 rounded-full mr-1"></span> 정상</div>
+                      <div className="flex items-center"><span className="w-3 h-3 bg-red-500 rounded-full mr-1"></span> 고장</div>
+                      <div className="flex items-center"><span className="w-3 h-3 bg-blue-200 rounded-sm mr-1"></span> 윈도우</div>
+                    </div>
+                  </div>
+                  <div className="flex space-x-1 mb-2">
+                    {s.lights.map((v, i) => {
+                      const inWindow = s.windowStart >= 0 && i >= s.windowStart && i < s.windowStart + K;
+                      return (
+                        <div key={i} className={`w-9 h-9 flex items-center justify-center rounded-full border-2 ${
+                          inWindow ? (v ? 'bg-red-500 border-red-700 text-white ring-2 ring-blue-400' : 'bg-emerald-500 border-emerald-700 text-white ring-2 ring-blue-400') :
+                          v ? 'bg-red-200 border-red-300 text-red-600' : 'bg-emerald-100 border-emerald-200 text-emerald-600'
+                        }`} style={{transition:'all 0.3s'}}>
+                          <span className="text-xs font-bold">{i+1}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {s.prefix.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-semibold text-slate-700 mb-1">누적합 배열</h3>
+                      <div className="flex space-x-1">
+                        {s.prefix.map((v, i) => (
+                          <div key={i} className="w-9 h-8 flex items-center justify-center rounded bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-600">{v}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2 mt-auto">
+                    {s.windowBroken !== null && (
+                      <div className="flex justify-between text-sm"><span className="text-slate-600">현재 윈도우 고장 수</span><span className="font-bold text-red-600">{s.windowBroken}</span></div>
+                    )}
+                    <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-md shadow-sm">
+                      <span className="font-semibold text-sm">최소 수리 횟수</span>
+                      <span className="text-2xl font-bold text-emerald-400">{s.answer !== null ? s.answer : '?'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2">
+                    <button onClick={prev} disabled={idx===0} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+                    <button onClick={toggle} className="flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm cursor-pointer">{playing?(<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>일시정지</>):(<><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>자동 재생</>)}</button>
+                    <button onClick={next} disabled={isEnd} className="p-2 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 cursor-pointer disabled:cursor-default"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                    <button onClick={reset} className="p-2 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 ml-2 cursor-pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                  </div>
+                  <div className="text-sm font-medium text-slate-500">진행도: {idx+1} / {STEPS.length}</div>
+                </div>
+              </div>
+              <div className="relative rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900 flex flex-col">
+                  <div ref={cvRef} className="p-4 overflow-y-auto overflow-x-auto flex-1 text-sm font-mono text-slate-300" style={{scrollBehavior:'smooth'}}>
+                    {PYTHON_CODE.map((line,i) => {
+                      const active = s.codeLine === i;
+                      return (<div key={i} data-active={active?'true':'false'} className={`px-2 py-0.5 rounded whitespace-nowrap ${active?'bg-blue-900/40 text-white font-bold border-l-2 border-blue-400 shadow-inner':'border-l-2 border-transparent'}`}><span style={{whiteSpace:'pre'}}>{line ? highlightLine(line) : ' '}</span></div>);
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
