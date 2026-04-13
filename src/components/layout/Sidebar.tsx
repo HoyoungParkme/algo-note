@@ -6,6 +6,7 @@
  *       알고리즘 탭: 토픽 NavList + 필터, 푼 문제 탭: 문제 리스트
  */
 
+import { useState, useMemo } from 'react';
 import type { Topic } from '@/lib/types';
 import { PROBLEMS } from '@/content/problems';
 import { useStore } from '@/store/useStore';
@@ -32,6 +33,18 @@ export function Sidebar({
   const total = algoTopics.length;
   const done = algoTopics.filter((t) => mastered[t.id]).length;
   const pct = total === 0 ? 0 : (done / total) * 100;
+
+  // 푼 문제 카테고리별 아코디언 상태
+  const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
+
+  const problemsByCategory = useMemo(() => {
+    const grouped: Record<string, typeof PROBLEMS> = {};
+    PROBLEMS.forEach(p => {
+      if (!grouped[p.category]) grouped[p.category] = [];
+      grouped[p.category].push(p);
+    });
+    return grouped;
+  }, []);
 
   return (
     <aside
@@ -117,41 +130,63 @@ export function Sidebar({
         {activeTab === 'algo' ? (
           <NavList topics={algoTopics} onItemClick={onItemClick} />
         ) : (
-          /* 푼 문제 목록 */
-          <ul className="flex flex-col gap-0.5">
-            {PROBLEMS.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    document
-                      .getElementById(`sec-${p.id}`)
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    onItemClick?.();
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-[0.85rem] font-medium transition-all"
-                  style={{ color: 'var(--text-dim)' }}
-                >
-                  <span
-                    className="font-mono text-[0.7rem] w-12 text-center shrink-0"
-                    style={{ color: 'var(--text-muted)' }}
+          /* 푼 문제 목록 (카테고리별 그룹) */
+          <div className="flex flex-col gap-2">
+            {Object.entries(problemsByCategory).map(([category, problems]) => {
+              const isOpen = openCats[category] ?? false;
+              return (
+                <div key={category} className="flex flex-col">
+                  {/* 카테고리 헤더 */}
+                  <button
+                    type="button"
+                    onClick={() => setOpenCats(prev => ({ ...prev, [category]: !prev[category] }))}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-left text-[0.85rem] font-bold transition-all hover:bg-[rgba(167,139,250,0.1)]"
+                    style={{ color: 'var(--text)' }}
                   >
-                    {p.num}
-                  </span>
-                  <span className="flex-1 truncate">{p.title}</span>
-                  <span
-                    className="text-[0.65rem] px-1.5 py-0.5 rounded-full shrink-0"
-                    style={{
-                      background: 'rgb(167 139 250 / 0.12)',
-                      color: 'var(--accent)',
-                    }}
-                  >
-                    {p.category}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                    <span>{category} <span className="text-[0.7rem] font-normal" style={{ color: 'var(--text-muted)' }}>({problems.length})</span></span>
+                    <span
+                      className="text-[0.7rem] transition-transform"
+                      style={{
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        color: 'var(--text-muted)'
+                      }}
+                    >
+                      ▼
+                    </span>
+                  </button>
+
+                  {/* 카테고리 내 문제 목록 */}
+                  {isOpen && (
+                    <ul className="flex flex-col gap-0.5 mt-1 ml-2 border-l pl-2" style={{ borderColor: 'var(--space-border)' }}>
+                      {problems.map((p) => (
+                        <li key={p.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              document
+                                .getElementById(`sec-${p.id}`)
+                                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              onItemClick?.();
+                            }}
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[0.8rem] font-medium transition-all hover:bg-[var(--card)]"
+                            style={{ color: 'var(--text-dim)' }}
+                          >
+                            <span
+                              className="font-mono text-[0.65rem] w-10 text-center shrink-0"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
+                              {p.num}
+                            </span>
+                            <span className="flex-1 truncate">{p.title}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </nav>
 
