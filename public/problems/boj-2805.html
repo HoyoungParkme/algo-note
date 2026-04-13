@@ -111,12 +111,49 @@
       const codeViewerRef = useRef(null);
       const stepData = STEPS[currentStepIdx];
       const isEnd = currentStepIdx === STEPS.length - 1;
-      const handleNext = useCallback(() => { if (currentStepIdx < STEPS.length - 1) setCurrentStepIdx(p => p+1); else setIsPlaying(false); }, [currentStepIdx]);
-      const handlePrev = () => { if (currentStepIdx > 0) { setCurrentStepIdx(p => p-1); setIsPlaying(false); } };
-      const handleReset = () => { setCurrentStepIdx(0); setIsPlaying(false); };
-      const togglePlay = () => { if (isEnd) handleReset(); setIsPlaying(!isPlaying); };
-      useEffect(() => { if (isPlaying) playIntervalRef.current = setInterval(handleNext, 1500); else clearInterval(playIntervalRef.current); return () => clearInterval(playIntervalRef.current); }, [isPlaying, handleNext]);
-      useEffect(() => { if (codeViewerRef.current && stepData.codeLine !== null) { const el = codeViewerRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, [currentStepIdx]);
+      const handleNext = useCallback(() => {
+        if (currentStepIdx < STEPS.length - 1) {
+          setCurrentStepIdx(prev => prev + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      }, [currentStepIdx]);
+
+      const handlePrev = () => {
+        if (currentStepIdx > 0) {
+          setCurrentStepIdx(prev => prev - 1);
+          setIsPlaying(false);
+        }
+      };
+
+      const handleReset = () => {
+        setCurrentStepIdx(0);
+        setIsPlaying(false);
+      };
+
+      const togglePlay = () => {
+        if (isEnd) handleReset();
+        setIsPlaying(!isPlaying);
+      };
+
+      useEffect(() => {
+        if (isPlaying) {
+          playIntervalRef.current = setInterval(handleNext, 1500);
+        } else {
+          clearInterval(playIntervalRef.current);
+        }
+        return () => clearInterval(playIntervalRef.current);
+      }, [isPlaying, handleNext]);
+
+      // 활성 코드 라인으로 자동 스크롤
+      useEffect(() => {
+        if (codeViewerRef.current && stepData.codeLine !== null) {
+          const activeEl = codeViewerRef.current.querySelector('[data-active="true"]');
+          if (activeEl) {
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, [currentStepIdx]);
 
       const maxH = Math.max(...INITIAL_TREES);
 
