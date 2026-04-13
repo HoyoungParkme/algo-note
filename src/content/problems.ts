@@ -921,6 +921,7 @@ print(answer)`,
     category: '다이나믹 프로그래밍',
     difficulty: 'Silver III',
     url: 'https://www.acmicpc.net/problem/1463',
+    htmlFile: 'problems/boj-1463.html',
     description: '다이나믹 프로그래밍',
     code: `N = int(input())
 
@@ -947,6 +948,7 @@ print(a[N])`,
     category: '다이나믹 프로그래밍',
     difficulty: 'Silver III',
     url: 'https://www.acmicpc.net/problem/2579',
+    htmlFile: 'problems/boj-2579.html',
     description: '다이나믹 프로그래밍',
     code: `N = int(input())
 S = [0] * N
@@ -979,6 +981,7 @@ print(max(A[N-1],B[N-1]))`,
     category: '그래프 이론',
     difficulty: 'Silver III',
     url: 'https://www.acmicpc.net/problem/2606',
+    htmlFile: 'problems/boj-2606.html',
     description: '그래프 이론, 그래프 탐색, 너비 우선 탐색, 깊이 우선 탐색',
     code: `import sys
 
