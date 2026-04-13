@@ -16,8 +16,22 @@ interface Props {
 /** vite.config.ts의 base 경로를 가져온다 (빌드/dev 모두 동작) */
 const BASE = import.meta.env.BASE_URL;
 
+/** difficulty 문자열에서 티어 추출 ("Gold III" → "Gold") */
+function tierOf(d: string) { return d.split(' ')[0]; }
+
+/** 티어별 색상 */
+const TIER_STYLE: Record<string, { bg: string; text: string }> = {
+  Bronze:   { bg: 'rgba(180,115,60,0.15)',  text: '#b47340' },
+  Silver:   { bg: 'rgba(140,150,175,0.18)', text: '#8c96af' },
+  Gold:     { bg: 'rgba(220,170,30,0.18)',  text: '#c8a020' },
+  Platinum: { bg: 'rgba(0,190,170,0.15)',   text: '#00beaa' },
+};
+
 export function ProblemCard({ problem, defaultOpen = false }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+
+  const tier = tierOf(problem.difficulty);
+  const tierStyle = TIER_STYLE[tier] ?? { bg: 'rgba(167,139,250,0.12)', text: 'var(--accent)' };
 
   return (
     <section
@@ -34,8 +48,9 @@ export function ProblemCard({ problem, defaultOpen = false }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center justify-between gap-3 px-6 py-5 cursor-pointer select-none hover:brightness-110"
       >
+        {/* BOJ 번호 배지 */}
         <span
-          className="font-mono text-[0.75rem] font-bold tracking-widest px-2.5 py-1 rounded-md shrink-0"
+          className="font-mono text-[0.72rem] font-bold tracking-widest px-2.5 py-1 rounded-md shrink-0"
           style={{
             color: 'var(--accent)',
             background: 'rgb(167 139 250 / 0.10)',
@@ -43,6 +58,7 @@ export function ProblemCard({ problem, defaultOpen = false }: Props) {
         >
           {problem.num}
         </span>
+
         <div className="flex-1 min-w-0">
           <h2
             className="text-[1.05rem] font-bold -tracking-wide truncate"
@@ -51,14 +67,22 @@ export function ProblemCard({ problem, defaultOpen = false }: Props) {
             {problem.title}
           </h2>
           <div
-            className="text-[0.78rem] mt-0.5 flex items-center gap-2"
+            className="text-[0.78rem] mt-0.5 flex items-center gap-2 flex-wrap"
             style={{ color: 'var(--text-muted)' }}
           >
+            {/* 카테고리 */}
             <span>{problem.category}</span>
             <span>·</span>
-            <span>{problem.difficulty}</span>
+            {/* 난이도 배지 (티어 색상) */}
+            <span
+              className="px-2 py-0.5 rounded-md text-[0.72rem] font-semibold"
+              style={{ background: tierStyle.bg, color: tierStyle.text }}
+            >
+              {problem.difficulty}
+            </span>
           </div>
         </div>
+
         <span
           className="text-xl transition-transform shrink-0"
           style={{
