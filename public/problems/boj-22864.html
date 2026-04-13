@@ -115,7 +115,7 @@
       useEffect(() => {
         if (codeViewerRef.current && stepData.codeLine !== null) {
           const el = codeViewerRef.current.querySelector('[data-active="true"]');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // removed scroll
         }
       }, [currentStepIdx]);
 

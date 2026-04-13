@@ -202,7 +202,7 @@
       useEffect(() => {
         if (codeViewerRef.current) {
           const activeEl = codeViewerRef.current.querySelector('[data-active="true"]');
-          if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }, [currentStepIdx]);
 

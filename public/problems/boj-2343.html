@@ -102,7 +102,7 @@
       const reset = () => { setIdx(0); setPlaying(false); };
       const toggle = () => { if (isEnd) reset(); setPlaying(!playing); };
       useEffect(() => { if (playing) ref.current = setInterval(next,1500); else clearInterval(ref.current); return ()=>clearInterval(ref.current); }, [playing,next]);
-      useEffect(() => { if (cvRef.current && s.codeLine !== null) { const el = cvRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({behavior:'smooth',block:'center'}); } }, [idx]);
+          // useEffect(() => { if (cvRef.current && s.codeLine !== null) { const el = cvRef.current.querySelector('[data-active="true"]'); if (el) el.scrollIntoView({behavior:'smooth',block:'center'}); } }, [idx]);
       return (
         <div className="min-h-screen bg-slate-50 font-sans p-6">
           <div className="max-w-6xl mx-auto space-y-6">
