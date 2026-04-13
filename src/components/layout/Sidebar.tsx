@@ -28,6 +28,8 @@ export function Sidebar({
 }: Props) {
   const activeTab = useStore((s) => s.activeTab);
   const mastered = useStore((s) => s.mastered);
+  const selectedProblemId = useStore((s) => s.selectedProblemId);
+  const setSelectedProblemId = useStore((s) => s.setSelectedProblemId);
 
   // 알고리즘 탭의 진행률
   const total = algoTopics.length;
@@ -158,29 +160,35 @@ export function Sidebar({
                   {/* 카테고리 내 문제 목록 */}
                   {isOpen && (
                     <ul className="flex flex-col gap-0.5 mt-1 ml-2 border-l pl-2" style={{ borderColor: 'var(--space-border)' }}>
-                      {problems.map((p) => (
-                        <li key={p.id}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              document
-                                .getElementById(`sec-${p.id}`)
-                                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              onItemClick?.();
-                            }}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[0.8rem] font-medium transition-all hover:bg-[var(--card)]"
-                            style={{ color: 'var(--text-dim)' }}
-                          >
-                            <span
-                              className="font-mono text-[0.65rem] w-10 text-center shrink-0"
-                              style={{ color: 'var(--text-muted)' }}
+                      {problems.map((p) => {
+                        const isSelected = selectedProblemId === p.id;
+                        return (
+                          <li key={p.id}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedProblemId(p.id);
+                                if (onItemClick) onItemClick();
+                              }}
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[0.8rem] font-medium transition-all hover:bg-[var(--card)]"
+                              style={{ 
+                                color: isSelected ? 'var(--accent)' : 'var(--text-dim)',
+                                background: isSelected ? 'rgba(167,139,250,0.1)' : 'transparent',
+                              }}
                             >
-                              {p.num}
-                            </span>
-                            <span className="flex-1 truncate">{p.title}</span>
-                          </button>
-                        </li>
-                      ))}
+                              <span
+                                className="font-mono text-[0.65rem] w-10 text-center shrink-0"
+                                style={{ color: isSelected ? 'var(--accent)' : 'var(--text-muted)' }}
+                              >
+                                {p.num}
+                              </span>
+                              <span className="flex-1 truncate font-bold">{p.title}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

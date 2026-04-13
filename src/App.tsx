@@ -56,8 +56,16 @@ export default function App() {
   const hidden = useStore((s) => s.hidden);
   const setDrawerOpen = useStore((s) => s.setDrawerOpen);
   const selectedProblemId = useStore((s) => s.selectedProblemId);
+  const setSelectedProblemId = useStore((s) => s.setSelectedProblemId);
 
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // 푼 문제 탭 진입 시 기본으로 첫 번째 문제 선택
+  useEffect(() => {
+    if (activeTab === 'skill' && !selectedProblemId && PROBLEMS.length > 0) {
+      setSelectedProblemId(PROBLEMS[0].id);
+    }
+  }, [activeTab, selectedProblemId, setSelectedProblemId]);
 
   // theme → <html> 클래스 동기화
   useEffect(() => {
